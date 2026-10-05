@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SecureAuth - Google Authenticator Web</title>
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Custom Stylesheet -->
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="dark-theme">
+    <!-- Entering Gateway Screen -->
+    <div id="gateway-screen" class="gateway-screen">
+        <div class="gateway-container">
+            <div class="gateway-logo">
+                <i class="fa-solid fa-shield-halved"></i>
+            </div>
+            <h2 id="gateway-title">Welcome to SecureAuth</h2>
+            <p id="gateway-subtitle">Please register to secure your 2FA codes</p>
+            
+            <form id="gateway-form">
+                <!-- Name field (only for registration) -->
+                <div class="form-group" id="gateway-name-group">
+                    <label for="gateway-name">Your Name</label>
+                    <input type="text" id="gateway-name" placeholder="e.g., Samad" required>
+                </div>
+                <div class="form-group">
+                    <label for="gateway-email">Email Address</label>
+                    <input type="email" id="gateway-email" placeholder="e.g., user@example.com" required>
+                </div>
+                <div class="form-group">
+                    <label for="gateway-password">Password</label>
+                    <div class="input-with-icon">
+                        <input type="password" id="gateway-password" placeholder="Enter password" required>
+                        <button type="button" id="toggle-gateway-password" class="input-icon-btn">
+                            <i class="fa-solid fa-eye"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="form-group hidden" id="gateway-confirm-group">
+                    <label for="gateway-confirm-password">Confirm Password</label>
+                    <input type="password" id="gateway-confirm-password" placeholder="Confirm password">
+                </div>
+                
+                <button type="submit" id="gateway-submit-btn" class="btn btn-primary btn-block">Register & Enter</button>
+            </form>
+            
+            <div id="gateway-error" class="gateway-error hidden"></div>
+            
+            <p class="gateway-switch">
+                <span id="gateway-switch-text">Already have an account?</span>
+                <a href="#" id="gateway-switch-link">Login here</a>
+            </p>
+        </div>
+    </div>
+
+    <!-- PIN Lock Screen Overlay -->
+    <div id="lock-screen" class="lock-screen hidden">
+        <div class="lock-container">
+            <div class="lock-logo">
+                <i class="fa-solid fa-shield-halved"></i>
+            </div>
+            <h2>SecureAuth Locked</h2>
+            <p>Enter your PIN to unlock</p>
+            <div class="pin-dots">
+                <div class="dot"></div>
+                <div class="dot"></div>
+                <div class="dot"></div>
+                <div class="dot"></div>
+            </div>
+            <div class="pin-keyboard">
+                <button class="pin-btn" data-val="1">1</button>
+                <button class="pin-btn" data-val="2">2</button>
+                <button class="pin-btn" data-val="3">3</button>
+                <button class="pin-btn" data-val="4">4</button>
+                <button class="pin-btn" data-val="5">5</button>
+                <button class="pin-btn" data-val="6">6</button>
+                <button class="pin-btn" data-val="7">7</button>
+                <button class="pin-btn" data-val="8">8</button>
+                <button class="pin-btn" data-val="9">9</button>
+                <button class="pin-btn text-btn" id="pin-clear">Clear</button>
+                <button class="pin-btn" data-val="0">0</button>
+                <button class="pin-btn text-btn" id="pin-backspace"><i class="fa-solid fa-delete-left"></i></button>
+            </div>
+            <p id="pin-error" class="pin-error hidden">Incorrect PIN. Try again.</p>
+        </div>
+    </div>
+
+    <!-- Main App Container -->
+    <div id="app-container" class="app-container">
+        <!-- Header -->
+        <header>
+            <div class="header-top">
+                <div class="logo">
+                    <i class="fa-solid fa-shield-halved logo-icon"></i>
+                    <h1>SecureAuth</h1>
+                </div>
+                <div class="header-actions">
+                    <div class="user-profile">
+                        <i class="fa-solid fa-user user-avatar-icon"></i>
+                        <span id="user-display-name" class="user-name">Guest</span>
+                    </div>
+                    <button id="settings-btn" class="icon-btn" title="Settings">
+                        <i class="fa-solid fa-gear"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="search-bar-container">
+                <i class="fa-solid fa-magnifying-glass search-icon"></i>
+                <input type="text" id="search-input" placeholder="Search accounts...">
+                <button id="clear-search" class="hidden"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main>
+            <!-- Empty State -->
+            <div id="empty-state" class="empty-state">
+                <div class="empty-icon">
+                    <i class="fa-solid fa-key"></i>
+                </div>
+                <h2>No accounts yet</h2>
+                <p>Add your first account to start generating 2FA security codes.</p>
+                <button id="empty-add-btn" class="btn btn-primary">
+                    <i class="fa-solid fa-plus"></i> Add Account
+                </button>
+            </div>
+
+            <!-- Accounts List -->
+            <div id="accounts-list" class="accounts-list hidden">
+                <!-- Account cards will be dynamically injected here -->
+            </div>
+        </main>
+
+        <!-- Floating Action Button (FAB) - MOVED TO BOTTOM LEFT -->
+        <button id="fab-btn" class="fab-btn" title="Add Account">
+            <i class="fa-solid fa-plus"></i>
+        </button>
+
+        <!-- FAB Menu Options - MOVED TO BOTTOM LEFT -->
+        <div id="fab-menu" class="fab-menu">
+            <button id="scan-qr-btn" class="fab-menu-item">
+                <i class="fa-solid fa-camera"></i>
+                <span>Scan QR Code</span>
+            </button>
+            <button id="manual-entry-btn" class="fab-menu-item">
+                <i class="fa-solid fa-keyboard"></i>
+                <span>Enter Key Manually</span>
+            </button>
+        </div>
+        <div id="fab-overlay" class="fab-overlay"></div>
+    </div>
+
+    <!-- Modal: Add Account Manually -->
+    <div id="manual-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Add Account Manually</h2>
+                <button class="close-btn" data-modal="manual-modal">&times;</button>
+            </div>
+            <form id="manual-form">
+                <div class="form-group">
+                    <label for="manual-issuer">Service / Issuer</label>
+                    <input type="text" id="manual-issuer" placeholder="e.g., Google, GitHub, Discord" required>
+                </div>
+                <div class="form-group">
+                    <label for="manual-account">Account Name / Email</label>
+                    <input type="text" id="manual-account" placeholder="e.g., user@example.com" required>
+                </div>
+                <div class="form-group">
+                    <label for="manual-secret">Secret Key (Base32)</label>
+                    <div class="input-with-icon">
+                        <input type="text" id="manual-secret" placeholder="e.g., JBSWY3DPEHPK3PXP" required autocomplete="off" style="text-transform: uppercase;">
+                        <button type="button" id="toggle-secret-visibility" class="input-icon-btn">
+                            <i class="fa-solid fa-eye"></i>
+                        </button>
+                    </div>
+                    <small class="form-help">Spaces and hyphens will be ignored. Case-insensitive.</small>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" data-modal="manual-modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Add Account</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Scan QR Code -->
+    <div id="scan-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Scan QR Code</h2>
+                <button class="close-btn" data-modal="scan-modal">&times;</button>
+            </div>
+            <div class="scan-tabs">
+                <button class="scan-tab active" data-tab="camera-scan">Use Camera</button>
+                <button class="scan-tab" data-tab="file-scan">Upload Image</button>
+            </div>
+            
+            <!-- Camera Scan Tab -->
+            <div id="camera-scan" class="scan-tab-content">
+                <div id="qr-reader-container">
+                    <div id="qr-reader"></div>
+                </div>
+                <p class="scan-instructions">Point your camera at the 2FA QR code provided by the service.</p>
+            </div>
+
+            <!-- File Scan Tab -->
+            <div id="file-scan" class="scan-tab-content hidden">
+                <div class="file-upload-area" id="file-upload-area">
+                    <i class="fa-solid fa-cloud-arrow-up upload-icon"></i>
+                    <p>Drag & drop QR code image here or <span>browse</span></p>
+                    <input type="file" id="qr-file-input" accept="image/*" class="hidden">
+                </div>
+                <div id="file-scan-error" class="scan-error hidden"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: View QR Code / Account Details -->
+    <div id="details-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="details-title">Account Details</h2>
+                <button class="close-btn" data-modal="details-modal">&times;</button>
+            </div>
+            <div class="details-body">
+                <div class="qr-display-container">
+                    <canvas id="details-qr-canvas"></canvas>
+                </div>
+                <div class="details-info">
+                    <div class="info-row">
+                        <span class="info-label">Issuer:</span>
+                        <span id="details-issuer-val" class="info-value"></span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Account:</span>
+                        <span id="details-account-val" class="info-value"></span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Secret Key:</span>
+                        <div class="secret-display">
+                            <span id="details-secret-val" class="info-value monospace"></span>
+                            <button id="copy-details-secret" class="icon-btn-small" title="Copy Secret Key">
+                                <i class="fa-solid fa-copy"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-actions">
+                    <button type="button" class="btn btn-primary" data-modal="details-modal">Done</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal: Settings -->
+    <div id="settings-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Settings</h2>
+                <button class="close-btn" data-modal="settings-modal">&times;</button>
+            </div>
+            <div class="settings-body">
+                <!-- Security Section -->
+                <div class="settings-section">
+                    <h3><i class="fa-solid fa-lock"></i> Security</h3>
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <span class="setting-title">App PIN Lock</span>
+                            <span class="setting-desc">Require a 4-digit PIN to open the app</span>
+                        </div>
+                        <div class="setting-control">
+                            <label class="switch">
+                                <input type="checkbox" id="pin-lock-toggle">
+                                <span class="slider round"></span>
+                            </label>
+                        </div>
+                    </div>
+                    <div id="pin-setup-container" class="pin-setup-container hidden">
+                        <div class="form-group">
+                            <label for="setup-pin">Set 4-Digit PIN</label>
+                            <input type="password" id="setup-pin" maxlength="4" pattern="[0-9]{4}" placeholder="e.g., 1234" inputmode="numeric">
+                        </div>
+                        <div class="form-group">
+                            <label for="setup-pin-confirm">Confirm PIN</label>
+                            <input type="password" id="setup-pin-confirm" maxlength="4" pattern="[0-9]{4}" placeholder="Confirm PIN" inputmode="numeric">
+                        </div>
+                        <button id="save-pin-btn" class="btn btn-primary btn-sm">Save PIN</button>
+                        <p id="pin-setup-error" class="pin-error hidden"></p>
+                    </div>
+                </div>
+
+                <!-- Backup & Restore Section -->
+                <div class="settings-section">
+                    <h3><i class="fa-solid fa-file-export"></i> Backup & Restore</h3>
+                    <p class="section-desc">Export your accounts to a file to back them up, or import them to restore your accounts on another device.</p>
+                    <div class="backup-actions">
+                        <button id="export-backup-btn" class="btn btn-secondary">
+                            <i class="fa-solid fa-download"></i> Download Backup
+                        </button>
+                        <button id="import-backup-trigger" class="btn btn-secondary">
+                            <i class="fa-solid fa-upload"></i> Import Backup
+                        </button>
+                        <input type="file" id="import-backup-input" accept=".json" class="hidden">
+                    </div>
+                    <p id="backup-status" class="backup-status hidden"></p>
+                </div>
+
+                <!-- Session Section -->
+                <div class="settings-section">
+                    <h3><i class="fa-solid fa-user-gear"></i> Session</h3>
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <span class="setting-title">Logout</span>
+                            <span class="setting-desc">Log out of your current session</span>
+                        </div>
+                        <button id="logout-btn" class="btn btn-secondary btn-sm">
+                            <i class="fa-solid fa-right-from-bracket"></i> Logout
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Danger Zone -->
+                <div class="settings-section danger-zone">
+                    <h3><i class="fa-solid fa-triangle-exclamation"></i> Danger Zone</h3>
+                    <div class="setting-item">
+                        <div class="setting-info">
+                            <span class="setting-title">Delete All Data</span>
+                            <span class="setting-desc">Permanently delete all accounts and settings. This cannot be undone!</span>
+                        </div>
+                        <button id="clear-all-btn" class="btn btn-danger">
+                            <i class="fa-solid fa-trash-can"></i> Clear All
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast hidden">
+        <span id="toast-message">Copied to clipboard!</span>
+    </div>
+
+    <!-- QR Code Generation Library (QRious) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js"></script>
+    <!-- QR Code Scanning Library (Html5Qrcode) -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
+    <!-- Core Application Script -->
+    <script src="app.js"></script>
+</body>
+</html>
