@@ -1,0 +1,3299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="referrer" content="strict-origin-when-cross-origin" />
+  <meta http-equiv="X-Content-Type-Options" content="nosniff" />
+  <meta http-equiv="Permissions-Policy" content="camera=(self), microphone=(), geolocation=(), payment=()" />
+  <title>SecureAuth</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg-primary: #0f172a;
+      --bg-secondary: #111827;
+      --bg-tertiary: #1f2937;
+      --bg-soft: #1e293b;
+      --text-primary: #f8fafc;
+      --text-secondary: #cbd5e1;
+      --text-muted: #94a3b8;
+      --accent: #3b82f6;
+      --accent-hover: #2563eb;
+      --accent-soft: rgba(59, 130, 246, 0.12);
+      --success: #10b981;
+      --danger: #ef4444;
+      --danger-hover: #dc2626;
+      --border: rgba(148, 163, 184, 0.18);
+      --shadow: 0 20px 45px rgba(15, 23, 42, 0.35);
+      --radius: 18px;
+      --font-sans: "Plus Jakarta Sans", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      font-family: var(--font-sans);
+      background: linear-gradient(180deg, #0f172a 0%, #111827 100%);
+      color: var(--text-primary);
+      min-height: 100vh;
+    }
+
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+    }
+
+    button, input {
+      font: inherit;
+    }
+
+    a {
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    .hidden {
+      display: none !important;
+    }
+
+    .ghost {
+      display: none;
+    }
+
+    .gateway-screen {
+      position: fixed;
+      inset: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: radial-gradient(circle at top, rgba(59, 130, 246, 0.20), transparent 30%), #0f172a;
+      padding: 20px;
+      z-index: 10;
+    }
+
+    .gateway-container {
+      width: min(100%, 420px);
+      background: rgba(17, 24, 39, 0.95);
+      border: 1px solid var(--border);
+      border-radius: 26px;
+      box-shadow: var(--shadow);
+      padding: 32px 28px 24px;
+      backdrop-filter: blur(8px);
+    }
+
+    .gateway-logo {
+      width: 72px;
+      height: 72px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      background: rgba(59, 130, 246, 0.12);
+      color: var(--accent);
+      font-size: 30px;
+      margin: 0 auto 18px;
+    }
+
+    .gateway-container h2 {
+      text-align: center;
+      font-size: clamp(1.7rem, 2vw, 2.2rem);
+      margin-bottom: 8px;
+      letter-spacing: -0.04em;
+    }
+
+    .gateway-container p {
+      text-align: center;
+      color: var(--text-secondary);
+      margin-bottom: 24px;
+      font-size: 0.95rem;
+    }
+
+    .form-group {
+      margin-bottom: 18px;
+    }
+
+    .form-group label {
+      display: block;
+      margin-bottom: 8px;
+      font-size: 0.76rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-secondary);
+    }
+
+    .input-with-icon {
+      position: relative;
+    }
+
+    .input-with-icon input {
+      padding-right: 46px;
+    }
+
+    .form-group input {
+      width: 100%;
+      background: rgba(15, 23, 42, 0.9);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 13px 14px;
+      color: var(--text-primary);
+      font-size: 0.96rem;
+      transition: 0.2s ease;
+      outline: none;
+    }
+
+    .form-group input:focus {
+      border-color: rgba(96, 165, 250, 0.9);
+      box-shadow: 0 0 0 3px rgba(59,130,246,0.18);
+    }
+
+    .input-icon-btn {
+      position: absolute;
+      right: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      width: 26px;
+      height: 26px;
+      border-radius: 8px;
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+    }
+
+    .input-icon-btn:hover {
+      color: var(--text-primary);
+      background: rgba(148, 163, 184, 0.08);
+    }
+
+    .gateway-error,
+    .pin-error,
+    .scan-error,
+    .backup-status {
+      border-radius: 10px;
+      padding: 10px 12px;
+      font-size: 0.82rem;
+      margin-top: 12px;
+    }
+
+    .gateway-error {
+      background: rgba(239, 68, 68, 0.08);
+      border: 1px solid rgba(239, 68, 68, 0.28);
+      color: #fca5a5;
+    }
+
+    .gateway-switch {
+      text-align: center;
+      margin-top: 16px;
+      color: var(--text-secondary);
+      font-size: 0.9rem;
+    }
+
+    .gateway-switch a {
+      font-weight: 700;
+      color: var(--accent);
+    }
+
+    .btn {
+      border: none;
+      border-radius: 12px;
+      padding: 12px 18px;
+      font-size: 0.96rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: 0.2s ease;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      text-decoration: none;
+    }
+
+    .btn-primary {
+      background: linear-gradient(180deg, var(--accent), var(--accent-hover));
+      color: white;
+      width: 100%;
+      box-shadow: 0 12px 24px rgba(59,130,246,0.28);
+    }
+
+    .btn-primary:hover {
+      filter: brightness(1.05);
+      transform: translateY(-1px);
+    }
+
+    .btn-secondary {
+      background: #1f2937;
+      color: var(--text-primary);
+      border: 1px solid var(--border);
+    }
+
+    .btn-secondary:hover {
+      background: #273448;
+    }
+
+    .btn-danger {
+      background: var(--danger);
+      color: white;
+    }
+
+    .btn-danger:hover {
+      background: var(--danger-hover);
+    }
+
+    .btn-sm {
+      padding: 9px 14px;
+      font-size: 0.8rem;
+    }
+
+    .app-container {
+      width: min(100%, 480px);
+      min-height: 100vh;
+      background: var(--bg-primary);
+      border-left: 1px solid var(--border);
+      border-right: 1px solid var(--border);
+      display: none;
+      flex-direction: column;
+      position: relative;
+    }
+
+    .app-container.active {
+      display: flex;
+    }
+
+    header {
+      background: rgba(15, 23, 42, 0.92);
+      backdrop-filter: blur(8px);
+      position: sticky;
+      top: 0;
+      z-index: 5;
+      border-bottom: 1px solid var(--border);
+      padding: 20px 18px 16px;
+    }
+
+    .header-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .logo-icon {
+      color: var(--accent);
+      font-size: 1.2rem;
+    }
+
+    .logo h1 {
+      font-size: 1.2rem;
+      font-weight: 800;
+      letter-spacing: -0.04em;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .user-profile {
+      background: rgba(30, 41, 59, 0.9);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 8px 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      max-width: 160px;
+    }
+
+    .user-avatar-icon {
+      color: var(--accent);
+      font-size: 0.8rem;
+    }
+
+    .user-name {
+      font-size: 0.78rem;
+      font-weight: 700;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .icon-btn {
+      width: 38px;
+      height: 38px;
+      border: none;
+      background: rgba(30, 41, 59, 0.7);
+      color: var(--text-secondary);
+      border-radius: 50%;
+      cursor: pointer;
+      transition: 0.2s ease;
+    }
+
+    .icon-btn:hover {
+      background: rgba(51, 65, 85, 0.9);
+      color: var(--text-primary);
+    }
+
+    .search-bar-container {
+      position: relative;
+    }
+
+    .search-icon {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+
+    #search-input {
+      width: 100%;
+      background: rgba(30, 41, 59, 0.9);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      color: var(--text-primary);
+      padding: 12px 42px 12px 38px;
+      outline: none;
+      font-size: 0.92rem;
+    }
+
+    #search-input:focus {
+      border-color: rgba(96, 165, 250, 0.8);
+      box-shadow: 0 0 0 3px rgba(59,130,246,0.16);
+    }
+
+    #clear-search {
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      cursor: pointer;
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+    }
+
+    main {
+      flex: 1;
+      padding: 18px 18px 100px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .empty-state {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      gap: 12px;
+      padding: 30px 20px;
+    }
+
+    .empty-icon {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: rgba(59,130,246,0.12);
+      color: var(--accent);
+      display: grid;
+      place-items: center;
+      font-size: 2rem;
+      margin-bottom: 6px;
+    }
+
+    .empty-state h2 {
+      font-size: 1.2rem;
+      font-weight: 700;
+    }
+
+    .empty-state p {
+      font-size: 0.9rem;
+      color: var(--text-secondary);
+      line-height: 1.6;
+      max-width: 300px;
+    }
+
+    .accounts-list {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .account-card {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      background: rgba(30, 41, 59, 0.85);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 14px 12px;
+      transition: 0.2s ease;
+    }
+
+    .account-card:hover {
+      transform: translateY(-2px);
+      border-color: rgba(96, 165, 250, 0.7);
+      box-shadow: 0 16px 30px rgba(15, 23, 42, 0.28);
+    }
+
+    .account-info-container {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+      flex: 1;
+    }
+
+    .service-avatar {
+      width: 48px;
+      height: 48px;
+      border-radius: 14px;
+      display: grid;
+      place-items: center;
+      font-size: 1.1rem;
+      font-weight: 800;
+      color: white;
+      text-transform: uppercase;
+      flex-shrink: 0;
+    }
+
+    .account-details {
+      min-width: 0;
+      flex: 1;
+    }
+
+    .issuer-name {
+      font-size: 0.7rem;
+      letter-spacing: 0.08em;
+      font-weight: 800;
+      color: var(--text-secondary);
+      text-transform: uppercase;
+      margin-bottom: 4px;
+    }
+
+    .account-name {
+      font-size: 0.92rem;
+      color: var(--text-muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-bottom: 8px;
+    }
+
+    .security-code {
+      display: flex;
+      align-items: center;
+      font-family: var(--font-mono);
+      font-weight: 700;
+      font-size: clamp(1.2rem, 2vw, 1.6rem);
+      letter-spacing: 0.08em;
+      color: var(--accent);
+      cursor: pointer;
+      transition: 0.2s ease;
+      user-select: none;
+    }
+
+    .security-code.expiring {
+      color: var(--danger);
+    }
+
+    .card-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-left: 6px;
+    }
+
+    .countdown-container {
+      position: relative;
+      width: 34px;
+      height: 34px;
+      display: grid;
+      place-items: center;
+    }
+
+    .countdown-ring {
+      transform: rotate(-90deg);
+      width: 34px;
+      height: 34px;
+    }
+
+    .countdown-ring-circle-bg {
+      stroke: rgba(148, 163, 184, 0.25);
+      fill: transparent;
+      stroke-width: 3;
+    }
+
+    .countdown-ring-circle {
+      stroke: var(--accent);
+      fill: transparent;
+      stroke-width: 3;
+      transition: stroke-dashoffset 0.2s linear, stroke 0.2s ease;
+      stroke-linecap: round;
+    }
+
+    .countdown-ring-circle.expiring {
+      stroke: var(--danger);
+    }
+
+    .countdown-text {
+      position: absolute;
+      font-size: 0.62rem;
+      font-weight: 800;
+      color: var(--text-secondary);
+      font-family: var(--font-mono);
+    }
+
+    .countdown-text.expiring {
+      color: var(--danger);
+    }
+
+    .action-btn {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      border: none;
+      background: rgba(148,163,184,0.05);
+      color: var(--text-muted);
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+      transition: 0.2s ease;
+    }
+
+    .action-btn:hover {
+      background: rgba(148,163,184,0.12);
+      color: var(--text-primary);
+    }
+
+    .action-btn.delete-btn:hover {
+      background: rgba(239, 68, 68, 0.12);
+      color: var(--danger);
+    }
+
+    .fab-btn {
+      position: fixed;
+      bottom: 24px;
+      left: calc(50% - 240px + 24px);
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      border: none;
+      background: linear-gradient(180deg, var(--accent), var(--accent-hover));
+      color: white;
+      display: grid;
+      place-items: center;
+      font-size: 1.5rem;
+      box-shadow: 0 18px 28px rgba(59,130,246,0.4);
+      cursor: pointer;
+      z-index: 30;
+      transition: 0.2s ease;
+    }
+
+    .fab-btn:hover {
+      transform: scale(1.04);
+    }
+
+    .fab-btn.active {
+      transform: rotate(135deg);
+      background: var(--bg-tertiary);
+    }
+
+    .fab-menu {
+      position: fixed;
+      left: calc(50% - 240px + 24px);
+      bottom: 92px;
+      z-index: 30;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      pointer-events: none;
+    }
+
+    .fab-menu-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 14px;
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      background: rgba(17, 24, 39, 0.95);
+      color: var(--text-primary);
+      box-shadow: 0 14px 28px rgba(15, 23, 42, 0.35);
+      opacity: 0;
+      transform: translateY(12px);
+      transition: 0.25s ease;
+      cursor: pointer;
+      pointer-events: auto;
+    }
+
+    .fab-menu-item i {
+      color: var(--accent);
+      width: 16px;
+      text-align: center;
+    }
+
+    .fab-menu.active {
+      pointer-events: auto;
+    }
+
+    .fab-menu.active .fab-menu-item {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .fab-menu.active .fab-menu-item:nth-child(1) { transition-delay: 0.05s; }
+    .fab-menu.active .fab-menu-item:nth-child(2) { transition-delay: 0.1s; }
+
+    .fab-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.5);
+      opacity: 0;
+      pointer-events: none;
+      transition: 0.25s ease;
+      z-index: 20;
+    }
+
+    .fab-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.7);
+      backdrop-filter: blur(8px);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      z-index: 50;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+    }
+
+    .modal.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal-content {
+      width: min(100%, 430px);
+      background: rgba(17, 24, 39, 0.97);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: var(--shadow);
+      transform: translateY(10px) scale(0.98);
+      transition: transform 0.2s ease;
+    }
+
+    .modal.active .modal-content {
+      transform: translateY(0) scale(1);
+    }
+
+    .modal-header {
+      padding: 18px 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .modal-header h2 {
+      font-size: 1.15rem;
+      font-weight: 800;
+    }
+
+    .close-btn {
+      width: 32px;
+      height: 32px;
+      border: none;
+      border-radius: 50%;
+      background: transparent;
+      color: var(--text-secondary);
+      cursor: pointer;
+      font-size: 1.5rem;
+    }
+
+    .close-btn:hover {
+      background: rgba(148,163,184,0.08);
+      color: var(--text-primary);
+    }
+
+    form {
+      padding: 20px;
+    }
+
+    .form-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    .form-help {
+      display: block;
+      color: var(--text-muted);
+      font-size: 0.72rem;
+      margin-top: 7px;
+    }
+
+    .scan-tabs {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .scan-tab {
+      flex: 1;
+      padding: 14px 10px;
+      background: transparent;
+      border: none;
+      border-bottom: 2px solid transparent;
+      color: var(--text-secondary);
+      font-weight: 700;
+      cursor: pointer;
+    }
+
+    .scan-tab.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+
+    .scan-tab-content {
+      padding: 20px;
+    }
+
+    #qr-reader-container {
+      width: 100%;
+      aspect-ratio: 1;
+      background: #0b1120;
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      overflow: hidden;
+      position: relative;
+    }
+
+    #qr-reader {
+      width: 100%;
+      height: 100%;
+    }
+
+    .scan-instructions {
+      text-align: center;
+      margin-top: 12px;
+      color: var(--text-secondary);
+      font-size: 0.82rem;
+      line-height: 1.5;
+    }
+
+    .file-upload-area {
+      width: 100%;
+      aspect-ratio: 1.3;
+      border: 2px dashed var(--border);
+      border-radius: 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      cursor: pointer;
+      text-align: center;
+      color: var(--text-secondary);
+      padding: 20px;
+      transition: 0.2s ease;
+    }
+
+    .file-upload-area:hover, .file-upload-area.dragover {
+      border-color: rgba(96, 165, 250, 0.9);
+      background: rgba(59,130,246,0.05);
+    }
+
+    .upload-icon {
+      font-size: 2.2rem;
+      color: var(--text-muted);
+    }
+
+    .file-upload-area p span {
+      color: var(--accent);
+      font-weight: 700;
+    }
+
+    .scan-error {
+      display: block;
+      background: rgba(239, 68, 68, 0.08);
+      border: 1px solid rgba(239,68,68,0.28);
+      color: #fca5a5;
+      margin-top: 12px;
+    }
+
+    .details-body,
+    .settings-body {
+      padding: 20px;
+    }
+
+    .qr-display-container {
+      background: white;
+      border-radius: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 14px;
+      margin-bottom: 18px;
+    }
+
+    #details-qr-canvas {
+      width: 180px !important;
+      height: 180px !important;
+      display: block;
+    }
+
+    .details-info {
+      background: rgba(15, 23, 42, 0.7);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    .info-row {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+    }
+
+    .info-label {
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--text-muted);
+      font-weight: 700;
+    }
+
+    .info-value {
+      color: var(--text-primary);
+      font-size: 0.95rem;
+      font-weight: 600;
+      word-break: break-all;
+    }
+
+    .info-value.monospace {
+      font-family: var(--font-mono);
+      letter-spacing: 0.05em;
+    }
+
+    .secret-display {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .icon-btn-small {
+      width: 30px;
+      height: 30px;
+      border: none;
+      border-radius: 8px;
+      background: rgba(148,163,184,0.06);
+      color: var(--text-secondary);
+      cursor: pointer;
+    }
+
+    .icon-btn-small:hover {
+      background: rgba(148,163,184,0.12);
+      color: var(--text-primary);
+    }
+
+    .settings-body {
+      max-height: 70vh;
+      overflow-y: auto;
+    }
+
+    .settings-section {
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 20px;
+      margin-bottom: 20px;
+    }
+
+    .settings-section:last-child {
+      border-bottom: none;
+      margin-bottom: 0;
+      padding-bottom: 0;
+    }
+
+    .settings-section h3 {
+      font-size: 0.92rem;
+      font-weight: 800;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .settings-section h3 i {
+      color: var(--accent);
+    }
+
+    .section-desc {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      line-height: 1.6;
+      margin-bottom: 16px;
+    }
+
+    .setting-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+
+    .setting-info {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .setting-title {
+      font-size: 0.95rem;
+      font-weight: 700;
+    }
+
+    .setting-desc {
+      font-size: 0.76rem;
+      color: var(--text-muted);
+    }
+
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 46px;
+      height: 24px;
+    }
+
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .slider {
+      position: absolute;
+      inset: 0;
+      background: #374151;
+      border-radius: 999px;
+      transition: 0.2s ease;
+    }
+
+    .slider::before {
+      content: "";
+      position: absolute;
+      left: 3px;
+      top: 3px;
+      width: 18px;
+      height: 18px;
+      background: white;
+      border-radius: 50%;
+      transition: 0.2s ease;
+    }
+
+    .switch input:checked + .slider {
+      background: var(--success);
+    }
+
+    .switch input:checked + .slider::before {
+      transform: translateX(22px);
+    }
+
+    .pin-setup-container {
+      margin-top: 14px;
+      padding: 14px;
+      border-radius: 14px;
+      background: rgba(15, 23, 42, 0.7);
+      border: 1px solid var(--border);
+    }
+
+    .backup-actions {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .backup-status {
+      margin-top: 12px;
+      font-weight: 700;
+      display: none;
+    }
+
+    .backup-status.success {
+      background: rgba(16,185,129,0.08);
+      border: 1px solid rgba(16,185,129,0.28);
+      color: #86efac;
+      display: block;
+    }
+
+    .backup-status.error {
+      background: rgba(239,68,68,0.08);
+      border: 1px solid rgba(239,68,68,0.28);
+      color: #fca5a5;
+      display: block;
+    }
+
+    .danger-zone {
+      background: rgba(239, 68, 68, 0.02);
+      border: 1px solid rgba(239,68,68,0.25);
+      border-radius: 14px;
+      padding: 16px;
+    }
+
+    .danger-zone h3 i {
+      color: var(--danger);
+    }
+
+    .lock-screen {
+      position: fixed;
+      inset: 0;
+      background: #0f172a;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+    }
+
+    .lock-container {
+      width: min(100%, 320px);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      gap: 14px;
+    }
+
+    .lock-logo {
+      width: 68px;
+      height: 68px;
+      display: grid;
+      place-items: center;
+      background: rgba(59,130,246,0.12);
+      border-radius: 50%;
+      color: var(--accent);
+      font-size: 1.8rem;
+    }
+
+    .lock-container h2 {
+      font-size: 1.8rem;
+      letter-spacing: -0.04em;
+    }
+
+    .lock-container p {
+      color: var(--text-secondary);
+      font-size: 0.92rem;
+    }
+
+    .pin-dots {
+      display: flex;
+      gap: 14px;
+      justify-content: center;
+      margin: 4px 0 10px;
+    }
+
+    .dot {
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      border: 2px solid rgba(148,163,184,0.7);
+      transition: 0.2s ease;
+      background: transparent;
+    }
+
+    .dot.filled {
+      background: var(--accent);
+      border-color: var(--accent);
+      box-shadow: 0 0 0 4px rgba(59,130,246,0.16);
+    }
+
+    .pin-keyboard {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+      width: 100%;
+      max-width: 260px;
+      margin-top: 8px;
+    }
+
+    .pin-btn {
+      width: 62px;
+      height: 62px;
+      margin: 0 auto;
+      border-radius: 50%;
+      border: 1px solid var(--border);
+      background: rgba(30,41,59,0.9);
+      color: var(--text-primary);
+      font-size: 1.4rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: grid;
+      place-items: center;
+    }
+
+    .pin-btn:hover {
+      background: rgba(51,65,85,0.9);
+      border-color: rgba(96,165,250,0.8);
+    }
+
+    .pin-btn.text-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-secondary);
+      font-size: 0.8rem;
+      font-weight: 800;
+    }
+
+    .pin-btn.text-btn:hover {
+      color: var(--text-primary);
+      background: transparent;
+    }
+
+    .pin-error {
+      background: rgba(239,68,68,0.08);
+      border: 1px solid rgba(239,68,68,0.25);
+      color: #fca5a5;
+      margin-top: 8px;
+    }
+
+    .toast {
+      position: fixed;
+      left: 50%;
+      bottom: 28px;
+      transform: translateX(-50%) translateY(120px);
+      background: rgba(17,24,39,0.95);
+      border: 1px solid var(--border);
+      color: var(--text-primary);
+      border-radius: 999px;
+      padding: 12px 18px;
+      box-shadow: var(--shadow);
+      z-index: 200;
+      opacity: 0;
+      transition: 0.3s ease;
+    }
+
+    .toast.active {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0);
+    }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      20%, 60% { transform: translateX(-8px); }
+      40%, 80% { transform: translateX(8px); }
+    }
+
+    .shake {
+      animation: shake 0.35s ease-in-out;
+    }
+
+    @media (max-width: 480px) {
+      .fab-btn {
+        left: 22px;
+      }
+
+      .fab-menu {
+        left: 22px;
+      }
+
+      .gateway-container {
+        padding: 26px 20px 18px;
+      }
+
+      .backup-actions {
+        grid-template-columns: 1fr;
+      }
+    }
+
+
+    /* Enhanced profile + security experience */
+    .profile-avatar {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      object-fit: cover;
+      border: 2px solid rgba(96,165,250,.65);
+      background: rgba(59,130,246,.14);
+      display: block;
+    }
+    .profile-avatar-fallback {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      background: linear-gradient(135deg,#2563eb,#7c3aed);
+      color: #fff;
+      font-weight: 800;
+      font-size: .8rem;
+      flex-shrink: 0;
+    }
+    .profile-editor { display:flex; align-items:center; gap:14px; margin-bottom:18px; }
+    .profile-editor-copy { flex:1; min-width:0; }
+    .profile-editor-copy strong { display:block; font-size:.95rem; margin-bottom:4px; }
+    .profile-editor-copy span { display:block; color:var(--text-muted); font-size:.74rem; line-height:1.45; }
+    .profile-upload { display:inline-flex; align-items:center; gap:7px; cursor:pointer; }
+    .security-note { font-size:.74rem; line-height:1.5; color:var(--text-muted); margin-top:10px; }
+    .security-question-box { background:rgba(59,130,246,.06); border:1px solid rgba(96,165,250,.18); border-radius:14px; padding:14px; margin-top:14px; }
+    .forgot-link { display:block; text-align:right; margin:-7px 0 16px; font-size:.78rem; font-weight:700; }
+    .otp-hero { margin-bottom:18px; padding:16px; border:1px solid rgba(96,165,250,.15); border-radius:20px; background:radial-gradient(circle at 90% 0%,rgba(59,130,246,.13),transparent 45%),rgba(30,41,59,.45); }
+    .otp-hero-title { font-size:.7rem; text-transform:uppercase; letter-spacing:.12em; color:var(--text-muted); font-weight:800; margin-bottom:5px; }
+    .otp-hero-subtitle { color:var(--text-secondary); font-size:.8rem; }
+    .otp-code-glow { text-shadow:0 0 18px rgba(59,130,246,.28); }
+    .account-card .security-code { font-size:clamp(1.3rem,4vw,1.72rem); }
+    @media (max-width:520px) { .profile-editor { align-items:flex-start; } }
+  
+    .security-question-display {
+      padding: 14px 16px;
+      border: 1px solid rgba(255,255,255,.12);
+      border-radius: 12px;
+      background: rgba(255,255,255,.04);
+      line-height: 1.5;
+      font-weight: 600;
+    }
+</style>
+</head>
+<body>
+  <div id="gateway-screen" class="gateway-screen">
+    <div class="gateway-container">
+      <div class="gateway-logo">
+        <i class="fa-solid fa-shield-halved"></i>
+      </div>
+      <h2 id="gateway-title">Create SecureAuth Account</h2>
+      <p id="gateway-subtitle">Register to secure your 2FA codes</p>
+
+      <form id="gateway-form">
+        <div class="form-group" id="gateway-name-group">
+          <label for="gateway-name">Your Name</label>
+          <input type="text" id="gateway-name" placeholder="e.g.,John Doe" required />
+        </div>
+
+        <div class="form-group">
+          <label for="gateway-email">Email Address</label>
+          <input type="email" id="gateway-email" placeholder="e.g., user@example.com" required />
+        </div>
+
+        <div class="form-group">
+          <label for="gateway-password">Password</label>
+          <div class="input-with-icon">
+            <input type="password" id="gateway-password" placeholder="Enter password" required autocomplete="new-password" />
+            <button type="button" id="toggle-gateway-password" class="input-icon-btn">
+              <i class="fa-solid fa-eye"></i>
+            </button>
+          </div>
+        </div>
+
+        <div class="form-group hidden" id="gateway-confirm-group">
+          <label for="gateway-confirm-password">Confirm Password</label>
+          <input type="password" id="gateway-confirm-password" placeholder="Confirm password" autocomplete="new-password" />
+        </div>
+
+        <button type="submit" class="btn btn-primary" id="gateway-submit-btn">Register &amp; Enter</button>
+        <a href="#" id="forgot-password-link" class="forgot-link hidden">Forgot password?</a>
+      </form>
+
+      <div id="gateway-error" class="gateway-error hidden"></div>
+
+      <p class="gateway-switch">
+        <span id="gateway-switch-text">Already have an account?</span>
+        <a href="#" id="gateway-switch-link">Login here</a>
+      </p>
+    </div>
+  </div>
+
+  <div id="lock-screen" class="lock-screen hidden">
+    <div class="lock-container">
+      <div class="lock-logo">
+        <i class="fa-solid fa-shield-halved"></i>
+      </div>
+      <h2>SecureAuth Locked</h2>
+      <p>Enter your PIN to unlock</p>
+
+      <div class="pin-dots">
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+      </div>
+
+      <div class="pin-keyboard">
+        <button class="pin-btn" data-val="1">1</button>
+        <button class="pin-btn" data-val="2">2</button>
+        <button class="pin-btn" data-val="3">3</button>
+        <button class="pin-btn" data-val="4">4</button>
+        <button class="pin-btn" data-val="5">5</button>
+        <button class="pin-btn" data-val="6">6</button>
+        <button class="pin-btn" data-val="7">7</button>
+        <button class="pin-btn" data-val="8">8</button>
+        <button class="pin-btn" data-val="9">9</button>
+        <button class="pin-btn text-btn" id="pin-clear">Clear</button>
+        <button class="pin-btn" data-val="0">0</button>
+        <button class="pin-btn text-btn" id="pin-backspace"><i class="fa-solid fa-delete-left"></i></button>
+      </div>
+
+      <p id="pin-error" class="pin-error hidden">Incorrect PIN. Try again.</p>
+    </div>
+  </div>
+
+  <div id="app-container" class="app-container">
+    <header>
+      <div class="header-top">
+        <div class="logo">
+          <i class="fa-solid fa-shield-halved logo-icon"></i>
+          <h1>SecureAuth</h1>
+        </div>
+
+        <div class="header-actions">
+          <div class="user-profile">
+            <span id="header-avatar-wrap"><span class="profile-avatar-fallback">G</span></span>
+            <span id="user-display-name" class="user-name">Guest</span>
+          </div>
+          <button id="settings-btn" class="icon-btn" title="Settings">
+            <i class="fa-solid fa-gear"></i>
+          </button>
+        </div>
+      </div>
+
+      <div class="search-bar-container">
+        <i class="fa-solid fa-magnifying-glass search-icon"></i>
+        <input type="text" id="search-input" placeholder="Search accounts..." />
+        <button id="clear-search" class="hidden" type="button">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+    </header>
+
+    <main>
+      <div class="otp-hero">
+        <div class="otp-hero-title">Your secure verification vault</div>
+        <div class="otp-hero-subtitle">Time-based codes refresh automatically every 30 seconds.</div>
+      </div>
+      <div id="empty-state" class="empty-state">
+        <div class="empty-icon">
+          <i class="fa-solid fa-key"></i>
+        </div>
+        <h2>No accounts yet</h2>
+        <p>Add your first account to start generating 2FA security codes.</p>
+        <button id="empty-add-btn" class="btn btn-primary">
+          <i class="fa-solid fa-plus"></i> Add Account
+        </button>
+      </div>
+
+      <div id="accounts-list" class="accounts-list hidden"></div>
+    </main>
+  </div>
+
+  <button id="fab-btn" class="fab-btn" title="Add Account" type="button">
+    <i class="fa-solid fa-plus"></i>
+  </button>
+
+  <div id="fab-menu" class="fab-menu">
+    <button id="scan-qr-btn" class="fab-menu-item" type="button">
+      <i class="fa-solid fa-camera"></i>
+      <span>Scan QR Code</span>
+    </button>
+    <button id="manual-entry-btn" class="fab-menu-item" type="button">
+      <i class="fa-solid fa-keyboard"></i>
+      <span>Enter Key Manually</span>
+    </button>
+  </div>
+
+  <div id="fab-overlay" class="fab-overlay"></div>
+
+  <div id="manual-modal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Add Account Manually</h2>
+        <button class="close-btn" data-modal="manual-modal" type="button">&times;</button>
+      </div>
+
+      <form id="manual-form">
+        <div class="form-group">
+          <label for="manual-issuer">Service / Issuer</label>
+          <input type="text" id="manual-issuer" placeholder="e.g., Google, GitHub, Discord" required />
+        </div>
+
+        <div class="form-group">
+          <label for="manual-account">Account Name / Email</label>
+          <input type="text" id="manual-account" placeholder="e.g., user@example.com" required />
+        </div>
+
+        <div class="form-group">
+          <label for="manual-secret">Secret Key (Base32)</label>
+          <div class="input-with-icon">
+            <input type="password" id="manual-secret" placeholder="e.g., JBSWY3DPEHPK3PXP" required autocomplete="off" style="text-transform: uppercase;" />
+            <button type="button" id="toggle-secret-visibility" class="input-icon-btn">
+              <i class="fa-solid fa-eye"></i>
+            </button>
+          </div>
+          <small class="form-help">Spaces and hyphens will be ignored. Case-insensitive.</small>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="btn btn-secondary" data-modal="manual-modal">Cancel</button>
+          <button type="submit" class="btn btn-primary">Add Account</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div id="scan-modal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Scan QR Code</h2>
+        <button class="close-btn" data-modal="scan-modal" type="button">&times;</button>
+      </div>
+
+      <div class="scan-tabs">
+        <button type="button" class="scan-tab active" data-tab="camera-scan">Use Camera</button>
+        <button type="button" class="scan-tab" data-tab="file-scan">Upload Image</button>
+      </div>
+
+      <div id="camera-scan" class="scan-tab-content">
+        <div id="qr-reader-container">
+          <div id="qr-reader"></div>
+        </div>
+        <p class="scan-instructions">Point your camera at the 2FA QR code provided by the service.</p>
+      </div>
+
+      <div id="file-scan" class="scan-tab-content hidden">
+        <div class="file-upload-area" id="file-upload-area">
+          <i class="fa-solid fa-cloud-arrow-up upload-icon"></i>
+          <p>Drag &amp; drop QR code image here or <span>browse</span></p>
+          <input type="file" id="qr-file-input" accept="image/*" class="hidden" />
+        </div>
+        <div id="file-scan-error" class="scan-error hidden"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="details-modal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="details-title">Account Details</h2>
+        <button class="close-btn" data-modal="details-modal" type="button">&times;</button>
+      </div>
+
+      <div class="details-body">
+        <div class="qr-display-container">
+          <canvas id="details-qr-canvas"></canvas>
+        </div>
+
+        <div class="details-info">
+          <div class="info-row">
+            <span class="info-label">Issuer:</span>
+            <span id="details-issuer-val" class="info-value"></span>
+          </div>
+
+          <div class="info-row">
+            <span class="info-label">Account:</span>
+            <span id="details-account-val" class="info-value"></span>
+          </div>
+
+          <div class="info-row">
+            <span class="info-label">Secret Key:</span>
+            <div class="secret-display">
+              <span id="details-secret-val" class="info-value monospace"></span>
+              <button id="copy-details-secret" class="icon-btn-small" title="Copy Secret Key" type="button">
+                <i class="fa-solid fa-copy"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-actions">
+          <button type="button" class="btn btn-primary" data-modal="details-modal">Done</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="forgot-password-modal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header"><h2>Recover your account</h2><button class="close-btn" data-modal="forgot-password-modal" type="button">&times;</button></div>
+      <form id="forgot-password-form">
+        <p id="recovery-description" class="section-desc">Enter your email to find your recovery question.</p>
+        <div class="form-group">
+          <label for="recovery-email">Email address</label>
+          <input type="email" id="recovery-email" required autocomplete="email" placeholder="you@example.com" />
+        </div>
+
+        <div id="recovery-question-group" class="hidden">
+          <div class="form-group">
+            <label>Security question</label>
+            <div id="recovery-question-label" class="security-question-display"></div>
+          </div>
+          <div class="form-group">
+            <label for="recovery-answer-input">Your answer</label>
+            <input type="password" id="recovery-answer-input" autocomplete="off" placeholder="Enter your answer" />
+          </div>
+        </div>
+
+        <div id="recovery-password-group" class="hidden">
+          <div class="form-group">
+            <label for="recovery-new-password">New password</label>
+            <input type="password" id="recovery-new-password" autocomplete="new-password" placeholder="At least 6 characters" />
+          </div>
+          <div class="form-group">
+            <label for="recovery-confirm-password">Confirm new password</label>
+            <input type="password" id="recovery-confirm-password" autocomplete="new-password" placeholder="Confirm new password" />
+          </div>
+        </div>
+
+        <button id="recovery-continue-btn" class="btn btn-primary" type="submit">Continue</button>
+        <p id="recovery-status" class="gateway-error hidden"></p>
+      </form>
+    </div>
+  </div>
+
+  <div id="settings-modal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>Settings</h2>
+        <button class="close-btn" data-modal="settings-modal" type="button">&times;</button>
+      </div>
+
+      <div class="settings-body">
+        <div class="settings-section">
+          <h3><i class="fa-solid fa-user-circle"></i> Profile</h3>
+          <div class="profile-editor">
+            <span id="settings-avatar-wrap"><span class="profile-avatar-fallback">U</span></span>
+            <div class="profile-editor-copy"><strong id="settings-profile-name">Your profile</strong><span id="settings-profile-email"></span></div>
+          </div>
+          <label class="btn btn-secondary btn-sm profile-upload" for="profile-picture-input"><i class="fa-solid fa-camera"></i> Change picture</label>
+          <input id="profile-picture-input" type="file" accept="image/png,image/jpeg,image/webp" class="hidden" />
+        </div>
+
+        <div class="settings-section">
+          <h3><i class="fa-solid fa-key"></i> Password</h3>
+          <p class="section-desc">Change your SecureAuth account password after verifying your current password.</p>
+          <div class="form-group"><label for="current-password">Current password</label><input type="password" id="current-password" autocomplete="current-password" placeholder="Enter current password" /></div>
+          <div class="form-group"><label for="new-password">New password</label><input type="password" id="new-password" autocomplete="new-password" placeholder="At least 6 characters" /></div>
+          <div class="form-group"><label for="confirm-new-password">Confirm new password</label><input type="password" id="confirm-new-password" autocomplete="new-password" placeholder="Confirm new password" /></div>
+          <button id="change-password-btn" class="btn btn-primary btn-sm" type="button">Update password</button>
+          <p id="change-password-status" class="pin-error hidden"></p>
+        </div>
+
+        <div class="settings-section">
+          <h3><i class="fa-solid fa-shield-heart"></i> Recovery</h3>
+          <p class="section-desc">Set a personal security question and answer for account recovery. Use an answer only you can remember.</p>
+          <div class="form-group"><label for="security-question">Security question</label><input type="text" id="security-question" maxlength="180" placeholder="e.g., What was the name of my first school?" /></div>
+          <div class="form-group"><label for="security-answer">Security answer</label><input type="password" id="security-answer" maxlength="180" autocomplete="off" placeholder="Enter your private answer" /></div>
+          <button id="save-recovery-btn" class="btn btn-secondary btn-sm" type="button">Save recovery question</button>
+          <p class="security-note">For safety, the answer is stored as a one-way hash. If you forget both your password and answer, use your email recovery method.</p>
+          <p id="recovery-status" class="pin-error hidden"></p>
+        </div>
+
+        <div class="settings-section">
+          <h3><i class="fa-solid fa-lock"></i> Security</h3>
+          <div class="setting-item">
+            <div class="setting-info">
+              <span class="setting-title">App PIN Lock</span>
+              <span class="setting-desc">Require a 4-digit PIN to open the app</span>
+            </div>
+            <label class="switch">
+              <input type="checkbox" id="pin-lock-toggle" />
+              <span class="slider"></span>
+            </label>
+          </div>
+
+          <div id="pin-setup-container" class="pin-setup-container hidden">
+            <div class="form-group">
+              <label for="setup-pin">Set 4-Digit PIN</label>
+              <input type="password" id="setup-pin" maxlength="4" pattern="[0-9]{4}" placeholder="e.g., 1234" inputmode="numeric" autocomplete="off" />
+            </div>
+            <div class="form-group">
+              <label for="setup-pin-confirm">Confirm PIN</label>
+              <input type="password" id="setup-pin-confirm" maxlength="4" pattern="[0-9]{4}" placeholder="Confirm PIN" inputmode="numeric" autocomplete="off" />
+            </div>
+            <button id="save-pin-btn" class="btn btn-primary btn-sm" type="button">Save PIN</button>
+            <p id="pin-setup-error" class="pin-error hidden"></p>
+          </div>
+        </div>
+
+        <div class="settings-section">
+          <h3><i class="fa-solid fa-file-export"></i> Backup &amp; Restore</h3>
+          <p class="section-desc">Export your accounts to a file to back them up, or import them to restore your accounts on another device.</p>
+
+          <div class="backup-actions">
+            <button id="export-backup-btn" class="btn btn-secondary" type="button">
+              <i class="fa-solid fa-download"></i> Download Backup
+            </button>
+            <button id="import-backup-trigger" class="btn btn-secondary" type="button">
+              <i class="fa-solid fa-upload"></i> Import Backup
+            </button>
+            <input type="file" id="import-backup-input" accept=".json" class="hidden" />
+          </div>
+
+          <p id="backup-status" class="backup-status hidden"></p>
+        </div>
+
+        <div class="settings-section">
+          <h3><i class="fa-solid fa-user-gear"></i> Session</h3>
+          <div class="setting-item">
+            <div class="setting-info">
+              <span class="setting-title">Logout</span>
+              <span class="setting-desc">Log out of your current session</span>
+            </div>
+            <button id="logout-btn" class="btn btn-secondary btn-sm" type="button">
+              <i class="fa-solid fa-right-from-bracket"></i> Logout
+            </button>
+          </div>
+        </div>
+
+        <div class="settings-section danger-zone">
+          <h3><i class="fa-solid fa-triangle-exclamation"></i> Danger Zone</h3>
+          <div class="setting-item">
+            <div class="setting-info">
+              <span class="setting-title">Delete All Data</span>
+              <span class="setting-desc">Permanently delete all accounts and settings. This cannot be undone!</span>
+            </div>
+            <button id="clear-all-btn" class="btn btn-danger" type="button">
+              <i class="fa-solid fa-trash-can"></i> Clear All
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast" class="toast hidden">
+    <span id="toast-message">Copied to clipboard!</span>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2" crossorigin="anonymous"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js" crossorigin="anonymous"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js" crossorigin="anonymous"></script>
+  <script>
+    // Supabase connection
+    const SUPABASE_URL = "https://ibedwuvcxpipqwdzcieg.supabase.co";
+    const SUPABASE_PUBLISHABLE_KEY = "sb_publishable_68kz_5-l3-U5EDI8iHAnNw__j7ia6hf";
+    const supabaseClient = window.supabase.createClient(
+      SUPABASE_URL,
+      SUPABASE_PUBLISHABLE_KEY
+    );
+
+    // Sensitive authenticator secrets are kept in Supabase and in memory only.
+    // Do not persist the account list or TOTP secrets in browser storage.
+    const STORAGE_KEY_ACCOUNTS = "secureauth_accounts"; // legacy key; only removed, never written
+    const STORAGE_KEY_PIN_HASH = "secureauth_pin_hash";
+    const STORAGE_KEY_PIN_SALT = "secureauth_pin_salt";
+    const SESSION_KEY_LOGGED_IN = "secureauth_session_active";
+
+    let state = {
+      accounts: [],
+      user: null,
+      profile: { avatar_data: null, security_question: null },
+      pinHash: null,
+      pinSalt: null,
+      isLocked: false,
+      activeTab: "camera-scan",
+      html5QrScanner: null,
+      currentCodes: {},
+      lastTimeStep: -1
+    };
+
+    let enteredPin = "";
+    let isRegisterMode = true;
+
+    function base32ToBuf(base32) {
+      const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+      const clean = String(base32).replace(/[\s-]/g, "").toUpperCase().replace(/=+$/, "");
+      if (!clean) return new Uint8Array(0);
+
+      let bits = 0;
+      let value = 0;
+      const bytes = [];
+
+      for (let i = 0; i < clean.length; i++) {
+        const idx = alphabet.indexOf(clean[i]);
+        if (idx === -1) throw new Error(`Invalid Base32 character: ${clean[i]}`);
+        value = (value << 5) | idx;
+        bits += 5;
+
+        if (bits >= 8) {
+          bytes.push((value >>> (bits - 8)) & 255);
+          bits -= 8;
+        }
+      }
+
+      return new Uint8Array(bytes);
+    }
+
+    async function generateTOTP(secretBase32, timeStepOffset = 0) {
+      try {
+        const keyBytes = base32ToBuf(secretBase32);
+        if (keyBytes.length === 0) return "000000";
+
+        const epoch = Math.floor(Date.now() / 1000);
+        const timeStep = Math.floor(epoch / 30) + timeStepOffset;
+
+        const timeBuffer = new ArrayBuffer(8);
+        const view = new DataView(timeBuffer);
+        const high = Math.floor(timeStep / 0x100000000);
+        const low = timeStep % 0x100000000;
+
+        view.setUint32(0, high);
+        view.setUint32(4, low);
+
+        const cryptoKey = await window.crypto.subtle.importKey(
+          "raw",
+          keyBytes,
+          { name: "HMAC", hash: { name: "SHA-1" } },
+          false,
+          ["sign"]
+        );
+
+        const signature = await window.crypto.subtle.sign("HMAC", cryptoKey, timeBuffer);
+        const hmac = new Uint8Array(signature);
+
+        const offset = hmac[hmac.length - 1] & 0x0f;
+        const code = (
+          ((hmac[offset] & 0x7f) << 24) |
+          ((hmac[offset + 1] & 0xff) << 16) |
+          ((hmac[offset + 2] & 0xff) << 8) |
+          (hmac[offset + 3] & 0xff)
+        ) % 1000000;
+
+        return code.toString().padStart(6, "0");
+      } catch (e) {
+        console.error("TOTP generation failed:", e);
+        return "000000";
+      }
+    }
+
+    function getServiceColor(issuer) {
+      const colors = ["#ef4444", "#f97316", "#f59e0b", "#10b981", "#06b6d4", "#3b82f6", "#6366f1", "#8b5cf6", "#ec4899", "#14b8a6"];
+      const clean = String(issuer || "").trim().toLowerCase();
+
+      if (clean.includes("google")) return "#ea4335";
+      if (clean.includes("github")) return "#24292e";
+      if (clean.includes("discord")) return "#5865f2";
+      if (clean.includes("facebook")) return "#1877f2";
+      if (clean.includes("microsoft")) return "#00a4ef";
+      if (clean.includes("aws") || clean.includes("amazon")) return "#ff9900";
+      if (clean.includes("dropbox")) return "#0061ff";
+      if (clean.includes("slack")) return "#4a154b";
+      if (clean.includes("twitter") || clean.includes("x")) return "#000000";
+      if (clean.includes("steam")) return "#171a21";
+
+      let hash = 0;
+      for (let i = 0; i < clean.length; i++) {
+        hash = clean.charCodeAt(i) + ((hash << 5) - hash);
+      }
+      return colors[Math.abs(hash) % colors.length];
+    }
+
+    function parseOtpauthUri(uriString) {
+      try {
+        const url = new URL(uriString);
+        if (url.protocol !== "otpauth:") throw new Error("Invalid protocol.");
+        if (url.host !== "totp") throw new Error("Only TOTP is supported.");
+
+        let label = decodeURIComponent(url.pathname.substring(1));
+        let issuer = url.searchParams.get("issuer") || "";
+        let account = label;
+
+        if (label.includes(":")) {
+          const parts = label.split(":");
+          const pathIssuer = parts[0].trim();
+          const pathAccount = parts.slice(1).join(":").trim();
+
+          if (!issuer) issuer = pathIssuer;
+          account = pathAccount;
+        }
+
+        const secret = url.searchParams.get("secret");
+        if (!secret) throw new Error("Secret key is missing.");
+
+        return {
+          issuer: issuer || "Unknown",
+          account: account || "Account",
+          secret: secret.toUpperCase()
+        };
+      } catch (e) {
+        console.error("Failed to parse OTP URI:", e);
+        throw new Error("Invalid QR code format.");
+      }
+    }
+
+    function escapeHtml(str) {
+      const div = document.createElement("div");
+      div.textContent = String(str);
+      return div.innerHTML;
+    }
+
+    function saveAccounts() {
+      // Intentionally do not persist authenticator accounts or TOTP secrets in browser storage.
+      // Supabase is the source of truth; keeping secrets out of localStorage reduces exposure
+      // to browser extensions, shared-device access, and client-side storage theft.
+      localStorage.removeItem(STORAGE_KEY_ACCOUNTS);
+    }
+
+    function bytesToBase64(bytes) {
+      let binary = "";
+      for (const byte of bytes) binary += String.fromCharCode(byte);
+      return btoa(binary);
+    }
+
+    function base64ToBytes(value) {
+      const binary = atob(value);
+      return Uint8Array.from(binary, char => char.charCodeAt(0));
+    }
+
+    async function hashPin(pin, saltBytes) {
+      const encoder = new TextEncoder();
+      const input = new Uint8Array(encoder.encode(`${pin}:SecureAuth:${bytesToBase64(saltBytes)}`));
+      const digest = await window.crypto.subtle.digest("SHA-256", input);
+      return bytesToBase64(new Uint8Array(digest));
+    }
+
+    async function createPinHash(pin) {
+      const salt = window.crypto.getRandomValues(new Uint8Array(16));
+      const hash = await hashPin(pin, salt);
+      return { hash, salt: bytesToBase64(salt) };
+    }
+
+    async function verifyPin(pin, expectedHash, saltBase64) {
+      try {
+        const salt = base64ToBytes(saltBase64);
+        const actualHash = await hashPin(pin, salt);
+        return actualHash === expectedHash;
+      } catch {
+        return false;
+      }
+    }
+
+    async function loadData() {
+      state.accounts = [];
+      state.user = null;
+
+      const { data: { session }, error: sessionError } = await supabaseClient.auth.getSession();
+      if (sessionError) {
+        console.error("Supabase session error:", sessionError);
+      }
+
+      if (session?.user) {
+        const userId = session.user.id;
+
+        const { data: profile, error: profileError } = await supabaseClient
+          .from("profiles")
+          .select("id, name, email, created_at, avatar_data, security_question")
+          .eq("id", userId)
+          .maybeSingle();
+
+        if (profileError) {
+          console.error("Profile load error:", profileError);
+        }
+
+        state.user = {
+          id: userId,
+          name: profile?.name || session.user.user_metadata?.name || session.user.email?.split("@")[0] || "User",
+          email: session.user.email || ""
+        };
+        state.profile = { avatar_data: profile?.avatar_data || null, security_question: profile?.security_question || null };
+        if (!profile?.email && session.user.email) {
+          await supabaseClient.from("profiles").update({ email: session.user.email }).eq("id", userId);
+        }
+        updateProfileUI();
+
+        const { data: accounts, error: accountsError } = await supabaseClient
+          .from("authenticator_accounts")
+          .select("id, issuer, account, secret, color, created_at")
+          .eq("user_id", userId)
+          .order("created_at", { ascending: true });
+
+        if (accountsError) {
+          console.error("Authenticator accounts load error:", accountsError);
+        } else {
+          state.accounts = accounts || [];
+        }
+
+        // Account data remains server-backed; never import unscoped local secrets automatically.
+        saveAccounts();
+      } else {
+        // No Supabase session: don't treat local credentials as an authenticated user.
+        localStorage.removeItem(STORAGE_KEY_ACCOUNTS);
+      }
+
+      // Clean up plaintext PINs from older versions.
+      localStorage.removeItem("secureauth_pin");
+      state.pinHash = localStorage.getItem(STORAGE_KEY_PIN_HASH);
+      state.pinSalt = localStorage.getItem(STORAGE_KEY_PIN_SALT);
+      if (state.pinHash && state.pinSalt) state.isLocked = true;
+    }
+
+
+    function initials(name) {
+      const parts = String(name || "User").trim().split(/\s+/).filter(Boolean);
+      return (parts.slice(0,2).map(p => p[0]).join("") || "U").toUpperCase();
+    }
+
+    function updateProfileUI() {
+      const name = state.user?.name || "User";
+      const email = state.user?.email || "";
+      document.getElementById("user-display-name").textContent = name;
+      const fallback = `<span class="profile-avatar-fallback">${escapeHtml(initials(name))}</span>`;
+      const avatar = state.profile?.avatar_data;
+      const avatarHtml = avatar ? `<img class="profile-avatar" src="${escapeHtml(avatar)}" alt="Profile picture">` : fallback;
+      document.getElementById("header-avatar-wrap").innerHTML = avatarHtml;
+      document.getElementById("settings-avatar-wrap").innerHTML = avatarHtml;
+      document.getElementById("settings-profile-name").textContent = name;
+      document.getElementById("settings-profile-email").textContent = email;
+      const q = document.getElementById("security-question");
+      if (q) q.value = state.profile?.security_question || "";
+    }
+
+    async function resizeProfileImage(file) {
+      if (!file || !["image/jpeg","image/png","image/webp"].includes(file.type)) throw new Error("Please choose a JPG, PNG, or WebP image.");
+      if (file.size > 5 * 1024 * 1024) throw new Error("Profile pictures must be 5 MB or smaller.");
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+      try {
+        await new Promise((resolve,reject) => { img.onload=resolve; img.onerror=reject; img.src=url; });
+        const max=256, scale=Math.min(1,max/Math.max(img.width,img.height));
+        const canvas=document.createElement("canvas"); canvas.width=Math.max(1,Math.round(img.width*scale)); canvas.height=Math.max(1,Math.round(img.height*scale));
+        canvas.getContext("2d").drawImage(img,0,0,canvas.width,canvas.height);
+        return canvas.toDataURL("image/webp",0.82);
+      } finally { URL.revokeObjectURL(url); }
+    }
+
+    async function saveProfilePicture(file) {
+      const data = await resizeProfileImage(file);
+      const { error } = await supabaseClient.from("profiles").update({ avatar_data:data }).eq("id",state.user.id);
+      if (error) throw error;
+      state.profile.avatar_data=data; updateProfileUI(); showToast("Profile picture updated.");
+    }
+
+    async function changePassword() {
+      const current=document.getElementById("current-password").value;
+      const next=document.getElementById("new-password").value;
+      const confirm=document.getElementById("confirm-new-password").value;
+      const status=document.getElementById("change-password-status"); status.classList.add("hidden");
+      if (next.length<6) throw new Error("New password must be at least 6 characters long.");
+      if (next!==confirm) throw new Error("New passwords do not match.");
+      const { error: verifyError } = await supabaseClient.auth.signInWithPassword({email:state.user.email,password:current});
+      if (verifyError) throw new Error("Current password is incorrect.");
+      const { error } = await supabaseClient.auth.updateUser({password:next});
+      if (error) throw error;
+      document.getElementById("current-password").value=""; document.getElementById("new-password").value=""; document.getElementById("confirm-new-password").value="";
+      showToast("Password changed successfully.");
+    }
+
+    async function saveRecoveryQuestion() {
+      const question=document.getElementById("security-question").value.trim();
+      const answer=document.getElementById("security-answer").value.trim();
+      const status=document.getElementById("recovery-status");
+      const btn=document.getElementById("save-recovery-btn");
+
+      status.className="pin-error hidden";
+
+      if(!state.user?.id) throw new Error("Your session has expired. Please log in again.");
+      if(question.length<8) throw new Error("Security question is too short.");
+      if(answer.length<3) throw new Error("Security answer is too short.");
+
+      const bytes=new TextEncoder().encode(answer.normalize("NFKC").trim().toLowerCase());
+      const digest=await crypto.subtle.digest("SHA-256",bytes);
+      const hash=Array.from(new Uint8Array(digest)).map(b=>b.toString(16).padStart(2,"0")).join("");
+
+      const { data, error }=await supabaseClient
+        .from("profiles")
+        .update({security_question:question,security_answer_hash:hash})
+        .eq("id",state.user.id)
+        .select("id")
+        .maybeSingle();
+
+      if(error) throw new Error(error.message||"Could not save the recovery question.");
+      if(!data) throw new Error("Could not save the recovery question. Your Supabase profile update permission may be missing.");
+
+      state.profile.security_question=question;
+      document.getElementById("security-answer").value="";
+      status.textContent="Recovery question saved successfully.";
+      status.className="backup-status success";
+      showToast("Recovery question saved successfully.");
+      setTimeout(()=>status.classList.add("hidden"),3000);
+    }
+
+    async function beginRecovery(email) {
+      const response=await fetch(`${SUPABASE_URL}/functions/v1/recover-password`,{method:"POST",headers:{"Content-Type":"application/json","apikey":SUPABASE_PUBLISHABLE_KEY},body:JSON.stringify({action:"question",email})});
+      const body=await response.json().catch(()=>({}));
+      if(!response.ok) throw new Error(body.error||"Recovery service is unavailable.");
+      return body;
+    }
+
+    async function verifyRecoveryAnswer(email,answer) {
+      const response=await fetch(`${SUPABASE_URL}/functions/v1/recover-password`,{method:"POST",headers:{"Content-Type":"application/json","apikey":SUPABASE_PUBLISHABLE_KEY},body:JSON.stringify({action:"verify",email,answer})});
+      const body=await response.json().catch(()=>({}));
+      if(!response.ok) throw new Error(body.error||"Recovery information is incorrect.");
+      return body;
+    }
+
+    async function finishRecovery(email,recoveryToken,newPassword) {
+      const response=await fetch(`${SUPABASE_URL}/functions/v1/recover-password`,{method:"POST",headers:{"Content-Type":"application/json","apikey":SUPABASE_PUBLISHABLE_KEY},body:JSON.stringify({action:"reset",email,recoveryToken,newPassword})});
+      const body=await response.json().catch(()=>({}));
+      if(!response.ok) throw new Error(body.error||"Could not reset password.");
+      return body;
+    }
+
+    function showToast(message) {
+      const toast = document.getElementById("toast");
+      const toastMsg = document.getElementById("toast-message");
+      toastMsg.textContent = message;
+      toast.classList.remove("hidden");
+      toast.classList.add("active");
+
+      clearTimeout(showToast.timer);
+      showToast.timer = setTimeout(() => {
+        toast.classList.remove("active");
+        setTimeout(() => toast.classList.add("hidden"), 200);
+      }, 2500);
+    }
+
+    async function updateCodesLoop() {
+      checkSessionTimeout();
+
+      const epoch = Math.floor(Date.now() / 1000);
+      const currentStep = Math.floor(epoch / 30);
+
+      if (currentStep !== state.lastTimeStep) {
+        state.lastTimeStep = currentStep;
+
+        for (const acc of state.accounts) {
+          state.currentCodes[acc.id] = await generateTOTP(acc.secret);
+          const codeEl = document.getElementById(`code-${acc.id}`);
+          if (codeEl) {
+            const code = state.currentCodes[acc.id];
+            codeEl.textContent = `${code.substring(0,3)} ${code.substring(3)}`;
+          }
+        }
+      }
+
+      updateCountdownVisuals();
+    }
+
+    function updateCountdownVisuals() {
+      const epoch = Math.floor(Date.now() / 1000);
+      const remainingSeconds = 30 - (epoch % 30);
+      const isExpiring = remainingSeconds <= 5;
+
+      for (const acc of state.accounts) {
+        const ring = document.getElementById(`ring-${acc.id}`);
+        const text = document.getElementById(`text-${acc.id}`);
+        const codeEl = document.getElementById(`code-${acc.id}`);
+
+        if (ring) {
+          const circumference = 94.24;
+          const offset = (remainingSeconds / 30) * circumference;
+          ring.style.strokeDasharray = circumference;
+          ring.style.strokeDashoffset = String(circumference - offset);
+          ring.classList.toggle("expiring", isExpiring);
+        }
+
+        if (text) {
+          text.textContent = remainingSeconds;
+          text.classList.toggle("expiring", isExpiring);
+        }
+
+        if (codeEl) {
+          codeEl.classList.toggle("expiring", isExpiring);
+        }
+      }
+    }
+
+    function renderAccounts() {
+      const accountsList = document.getElementById("accounts-list");
+      const emptyState = document.getElementById("empty-state");
+      const searchInput = document.getElementById("search-input");
+      const query = searchInput.value.trim().toLowerCase();
+
+      const filteredAccounts = state.accounts.filter(acc =>
+        (acc.issuer || "").toLowerCase().includes(query) ||
+        (acc.account || "").toLowerCase().includes(query)
+      );
+
+      if (state.accounts.length === 0) {
+        emptyState.classList.remove("hidden");
+        accountsList.classList.add("hidden");
+        accountsList.innerHTML = "";
+        return;
+      }
+
+      emptyState.classList.add("hidden");
+      accountsList.classList.remove("hidden");
+      accountsList.innerHTML = "";
+
+      if (filteredAccounts.length === 0) {
+        accountsList.innerHTML = `
+          <div class="empty-state" style="padding: 20px;">
+            <div class="empty-icon" style="width: 60px;height:60px;font-size: 1.5rem;margin-bottom: 0;">
+              <i class="fa-solid fa-magnifying-glass"></i>
+            </div>
+            <h2>No results found</h2>
+            <p>No accounts match "${escapeHtml(searchInput.value)}"</p>
+          </div>
+        `;
+        return;
+      }
+
+      for (const acc of filteredAccounts) {
+        const code = state.currentCodes[acc.id] || "000000";
+        const formattedCode = `${code.substring(0,3)} ${code.substring(3)}`;
+        const avatarColor = /^#[0-9a-fA-F]{6}$/.test(String(acc.color || ""))
+          ? acc.color
+          : getServiceColor(acc.issuer);
+        const firstLetter = escapeHtml((acc.issuer || "A").charAt(0).toUpperCase());
+
+        const card = document.createElement("div");
+        card.className = "account-card";
+        card.dataset.id = acc.id;
+
+        card.innerHTML = `
+          <div class="account-info-container">
+            <div class="service-avatar" style="background-color: ${avatarColor};">${firstLetter}</div>
+            <div class="account-details">
+              <div class="issuer-name">${escapeHtml(acc.issuer)}</div>
+              <div class="account-name">${escapeHtml(acc.account)}</div>
+              <div class="security-code" id="code-${acc.id}" title="Click to copy code">${formattedCode}</div>
+            </div>
+          </div>
+
+          <div class="card-actions">
+            <div class="countdown-container">
+              <svg class="countdown-ring" viewBox="0 0 36 36">
+                <circle class="countdown-ring-circle-bg" cx="18" cy="18" r="15"></circle>
+                <circle class="countdown-ring-circle" id="ring-${acc.id}" cx="18" cy="18" r="15"></circle>
+              </svg>
+              <span class="countdown-text" id="text-${acc.id}">30</span>
+            </div>
+            <button class="action-btn copy-btn" title="Copy Code" type="button"><i class="fa-solid fa-copy"></i></button>
+            <button class="action-btn qr-btn" title="View QR Code" type="button"><i class="fa-solid fa-qrcode"></i></button>
+            <button class="action-btn delete-btn" title="Delete Account" type="button"><i class="fa-solid fa-trash-can"></i></button>
+          </div>
+        `;
+
+        card.querySelector(".security-code").addEventListener("click", () => copyCode(acc.id));
+        card.querySelector(".copy-btn").addEventListener("click", () => copyCode(acc.id));
+        card.querySelector(".qr-btn").addEventListener("click", () => showAccountQr(acc));
+        card.querySelector(".delete-btn").addEventListener("click", () => deleteAccount(acc.id, acc.issuer));
+
+        accountsList.appendChild(card);
+      }
+
+      updateCountdownVisuals();
+    }
+
+    function copyCode(accountId) {
+      const code = state.currentCodes[accountId];
+      if (!code) return;
+
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(code)
+          .then(() => showToast("Code copied to clipboard!"))
+          .catch(() => showToast("Failed to copy code."));
+      } else {
+        showToast("Clipboard not available.");
+      }
+    }
+
+    async function deleteAccount(id, issuer) {
+      const confirmed = window.confirm(`Are you sure you want to delete "${issuer}"?`);
+      if (!confirmed) return;
+
+      const { error } = await supabaseClient
+        .from("authenticator_accounts")
+        .delete()
+        .eq("id", id);
+
+      if (error) {
+        console.error("Delete account error:", error);
+        showToast("Could not delete account from the server.");
+        return;
+      }
+
+      state.accounts = state.accounts.filter(acc => acc.id !== id);
+      delete state.currentCodes[id];
+      saveAccounts();
+      renderAccounts();
+      showToast("Account deleted.");
+    }
+
+    function showAccountQr(account) {
+      const title = document.getElementById("details-title");
+      const issuerVal = document.getElementById("details-issuer-val");
+      const accountVal = document.getElementById("details-account-val");
+      const secretVal = document.getElementById("details-secret-val");
+      const copyBtn = document.getElementById("copy-details-secret");
+      const canvas = document.getElementById("details-qr-canvas");
+
+      title.textContent = `${account.issuer} Details`;
+      issuerVal.textContent = account.issuer;
+      accountVal.textContent = account.account;
+      secretVal.textContent = account.secret;
+
+      const label = `${account.issuer}:${account.account}`;
+      const otpauthUri = `otpauth://totp/${encodeURIComponent(label)}?secret=${encodeURIComponent(account.secret)}&issuer=${encodeURIComponent(account.issuer)}`;
+
+      new QRious({
+        element: canvas,
+        value: otpauthUri,
+        size: 250,
+        level: "M"
+      });
+
+      copyBtn.onclick = () => {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          navigator.clipboard.writeText(account.secret)
+            .then(() => showToast("Secret key copied!"))
+            .catch(() => showToast("Failed to copy secret."));
+        } else {
+          showToast("Clipboard not available.");
+        }
+      };
+
+      openModal("details-modal");
+    }
+
+    function openModal(modalId) {
+      const modal = document.getElementById(modalId);
+      if (!modal) return;
+      modal.classList.add("active");
+
+      if (modalId === "scan-modal" && state.activeTab === "camera-scan") {
+        startCameraScanner();
+      }
+    }
+
+    function closeModal(modalId) {
+      const modal = document.getElementById(modalId);
+      if (!modal) return;
+      modal.classList.remove("active");
+
+      if (modalId === "scan-modal") stopCameraScanner();
+    }
+
+    function toggleFabMenu() {
+      const fabBtn = document.getElementById("fab-btn");
+      const fabMenu = document.getElementById("fab-menu");
+      const fabOverlay = document.getElementById("fab-overlay");
+      const active = fabBtn.classList.toggle("active");
+      fabMenu.classList.toggle("active", active);
+      fabOverlay.classList.toggle("active", active);
+    }
+
+    function closeFabMenu() {
+      const fabBtn = document.getElementById("fab-btn");
+      const fabMenu = document.getElementById("fab-menu");
+      const fabOverlay = document.getElementById("fab-overlay");
+      fabBtn.classList.remove("active");
+      fabMenu.classList.remove("active");
+      fabOverlay.classList.remove("active");
+    }
+
+    function startCameraScanner() {
+      const container = document.getElementById("qr-reader-container");
+      container.classList.remove("hidden");
+
+      if (state.html5QrScanner && state.html5QrScanner.isScanning) return;
+
+      state.html5QrScanner = new Html5Qrcode("qr-reader");
+      const config = { fps: 10, qrbox: { width: 250, height: 250 }, aspectRatio: 1.0 };
+
+      state.html5QrScanner.start(
+        { facingMode: "environment" },
+        config,
+        onQrScanSuccess,
+        onQrScanFailure
+      ).catch(err => {
+        console.error("Camera scanner failed:", err);
+        document.getElementById("qr-reader").innerHTML = `
+          <div style="display:flex;align-items:center;justify-content:center;height:100%;flex-direction:column;gap:10px;color:#cbd5e1;">
+            <i class="fa-solid fa-video-slash" style="font-size: 2rem;"></i>
+            <span>Camera access denied or unavailable.</span>
+            <button class="btn btn-secondary btn-sm" type="button" onclick="switchScanTab('file-scan')">Use File Upload</button>
+          </div>
+        `;
+      });
+    }
+
+    function stopCameraScanner() {
+      if (state.html5QrScanner && state.html5QrScanner.isScanning) {
+        state.html5QrScanner.stop().then(() => {
+          state.html5QrScanner = null;
+        }).catch(error => {
+          console.error("Stop camera scanner error:", error);
+        });
+      }
+    }
+
+    function onQrScanSuccess(decodedText) {
+      try {
+        stopCameraScanner();
+        closeModal("scan-modal");
+
+        const parsed = parseOtpauthUri(decodedText);
+        addAccount(parsed.issuer, parsed.account, parsed.secret).then(success => {
+          if (success) showToast(`Added account: ${parsed.issuer}`);
+        });
+      } catch (e) {
+        showToast(e.message || "Invalid QR code");
+        setTimeout(() => {
+          if (document.getElementById("scan-modal").classList.contains("active") && state.activeTab === "camera-scan") {
+            startCameraScanner();
+          }
+        }, 2000);
+      }
+    }
+
+    function onQrScanFailure() {}
+
+    async function handleQrFileUpload(file) {
+      const errorEl = document.getElementById("file-scan-error");
+      errorEl.classList.add("hidden");
+
+      if (!file) return;
+
+      const html5QrCode = new Html5Qrcode("qr-reader");
+      html5QrCode.scanFile(file, true)
+        .then(async decodedText => {
+          const parsed = parseOtpauthUri(decodedText);
+          const success = await addAccount(parsed.issuer, parsed.account, parsed.secret);
+          if (success) {
+            closeModal("scan-modal");
+            showToast(`Added account: ${parsed.issuer}`);
+          }
+        })
+        .catch(err => {
+          console.error("File scan error:", err);
+          errorEl.textContent = "Could not find a valid 2FA QR code in this image. Please try another image.";
+          errorEl.classList.remove("hidden");
+        });
+    }
+
+    function switchScanTab(tabId) {
+      state.activeTab = tabId;
+      document.querySelectorAll(".scan-tab").forEach(btn => {
+        btn.classList.toggle("active", btn.dataset.tab === tabId);
+      });
+      document.querySelectorAll(".scan-tab-content").forEach(content => {
+        content.classList.toggle("hidden", content.id !== tabId);
+      });
+
+      if (tabId === "camera-scan") {
+        startCameraScanner();
+      } else {
+        stopCameraScanner();
+      }
+    }
+
+    async function addAccount(issuer, account, secret) {
+      const cleanIssuer = String(issuer || "Unknown").trim().slice(0, 120);
+      const cleanAccount = String(account || "Account").trim().slice(0, 254);
+      const cleanSecret = String(secret).replace(/[\s-]/g, "").toUpperCase();
+
+      if (!cleanIssuer || !cleanAccount || cleanSecret.length < 8 || cleanSecret.length > 256) {
+        window.alert("Please enter a valid issuer, account, and secret key.");
+        return false;
+      }
+
+      try {
+        const decoded = base32ToBuf(cleanSecret);
+        if (decoded.length < 10) throw new Error("Secret is too short.");
+      } catch (e) {
+        window.alert("Invalid Secret Key! Secret must be a valid Base32 string (A-Z, 2-7).");
+        return false;
+      }
+
+      const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
+      if (userError || !user) {
+        showToast("Please log in before adding an account.");
+        return false;
+      }
+
+      const { data: inserted, error } = await supabaseClient
+        .from("authenticator_accounts")
+        .insert({
+          user_id: user.id,
+          issuer: cleanIssuer,
+          account: cleanAccount,
+          secret: cleanSecret,
+          color: getServiceColor(cleanIssuer)
+        })
+        .select("id, issuer, account, secret, color, created_at")
+        .single();
+
+      if (error) {
+        console.error("Add account error:", error);
+        showToast("Could not save account to the server.");
+        return false;
+      }
+
+      state.accounts.push(inserted);
+      saveAccounts();
+
+      generateTOTP(inserted.secret).then(code => {
+        state.currentCodes[inserted.id] = code;
+        renderAccounts();
+      });
+
+      return true;
+    }
+
+    function exportBackup() {
+      if (state.accounts.length === 0) {
+        showToast("No accounts to backup!");
+        return;
+      }
+
+      try {
+        const backupData = {
+          version: 1,
+          exportedAt: new Date().toISOString(),
+          accounts: state.accounts
+        };
+
+        const json = JSON.stringify(backupData, null, 2);
+        const blob = new Blob([json], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `secureauth_backup_${new Date().toISOString().slice(0,10)}.json`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+
+        showToast("Backup downloaded successfully!");
+        updateBackupStatus("Backup downloaded successfully!", "success");
+      } catch (e) {
+        console.error("Export failed:", e);
+        showToast("Backup failed.");
+        updateBackupStatus("Backup failed. Please try again.", "error");
+      }
+    }
+
+    async function importBackup(file) {
+      if (!file) return;
+      if (file.size > 1024 * 1024) {
+        updateBackupStatus("Backup file is too large. Maximum size is 1 MB.", "error");
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = async function(e) {
+        try {
+          const data = JSON.parse(e.target.result);
+          if (!data || !Array.isArray(data.accounts)) {
+            throw new Error("Invalid backup file format.");
+          }
+
+          let importedCount = 0;
+          let duplicateCount = 0;
+
+          for (const importedAcc of data.accounts) {
+            if (!importedAcc.issuer || !importedAcc.account || !importedAcc.secret) continue;
+
+            const normalizedSecret = String(importedAcc.secret).replace(/[\s-]/g, "").toUpperCase();
+            const isDuplicate = state.accounts.some(acc =>
+              acc.secret.replace(/[\s-]/g, "").toUpperCase() === normalizedSecret ||
+              (acc.issuer.toLowerCase() === String(importedAcc.issuer).toLowerCase() &&
+               acc.account.toLowerCase() === String(importedAcc.account).toLowerCase())
+            );
+
+            if (isDuplicate) {
+              duplicateCount++;
+              continue;
+            }
+
+            const success = await addAccount(
+              String(importedAcc.issuer).trim(),
+              String(importedAcc.account).trim(),
+              normalizedSecret
+            );
+
+            if (success) importedCount++;
+          }
+
+          if (importedCount > 0) {
+            state.lastTimeStep = -1;
+            await updateCodesLoop();
+            renderAccounts();
+            showToast(`Imported ${importedCount} accounts!`);
+            updateBackupStatus(`Successfully imported ${importedCount} accounts! (Skipped ${duplicateCount} duplicates)`, "success");
+          } else {
+            showToast("No new accounts imported.");
+            updateBackupStatus(`No new accounts imported. (Skipped ${duplicateCount} duplicates)`, "success");
+          }
+
+          document.getElementById("import-backup-input").value = "";
+        } catch (err) {
+          console.error("Import failed:", err);
+          showToast("Failed to import backup.");
+          updateBackupStatus("Failed to import backup. Invalid file format.", "error");
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    function updateBackupStatus(message, type) {
+      const statusEl = document.getElementById("backup-status");
+      statusEl.textContent = message;
+      statusEl.className = `backup-status ${type}`;
+      statusEl.classList.remove("hidden");
+
+      clearTimeout(updateBackupStatus.timer);
+      updateBackupStatus.timer = setTimeout(() => {
+        statusEl.classList.add("hidden");
+      }, 5000);
+    }
+
+    function initLockScreen() {
+      const lockScreen = document.getElementById("lock-screen");
+      if (state.pinHash && state.pinSalt) {
+        state.isLocked = true;
+        lockScreen.classList.remove("hidden");
+        enteredPin = "";
+        updatePinDots();
+        document.getElementById("pin-error").classList.add("hidden");
+      } else {
+        state.isLocked = false;
+        lockScreen.classList.add("hidden");
+      }
+    }
+
+    function updatePinDots() {
+      const dots = document.querySelectorAll(".pin-dots .dot");
+      dots.forEach((dot, idx) => {
+        dot.classList.toggle("filled", idx < enteredPin.length);
+      });
+    }
+
+    function handlePinInput(val) {
+      if (enteredPin.length >= 4) return;
+
+      enteredPin += val;
+      updatePinDots();
+
+      if (enteredPin.length === 4) {
+        setTimeout(async () => {
+          const valid = await verifyPin(enteredPin, state.pinHash, state.pinSalt);
+
+          if (valid) {
+            document.getElementById("lock-screen").classList.add("hidden");
+            state.isLocked = false;
+            showToast("Welcome back!");
+          } else {
+            const container = document.querySelector(".lock-container");
+            container.classList.add("shake");
+            document.getElementById("pin-error").classList.remove("hidden");
+
+            setTimeout(() => container.classList.remove("shake"), 400);
+            enteredPin = "";
+            updatePinDots();
+          }
+        }, 180);
+      }
+    }
+
+    function handlePinBackspace() {
+      if (enteredPin.length > 0) {
+        enteredPin = enteredPin.slice(0, -1);
+        updatePinDots();
+        document.getElementById("pin-error").classList.add("hidden");
+      }
+    }
+
+    function handlePinClear() {
+      enteredPin = "";
+      updatePinDots();
+      document.getElementById("pin-error").classList.add("hidden");
+    }
+
+    async function setupPinLock(pinVal) {
+      const { hash, salt } = await createPinHash(pinVal);
+      localStorage.setItem(STORAGE_KEY_PIN_HASH, hash);
+      localStorage.setItem(STORAGE_KEY_PIN_SALT, salt);
+      state.pinHash = hash;
+      state.pinSalt = salt;
+      showToast("PIN Lock enabled successfully!");
+      document.getElementById("pin-lock-toggle").checked = true;
+      document.getElementById("pin-setup-container").classList.add("hidden");
+      document.getElementById("setup-pin").value = "";
+      document.getElementById("setup-pin-confirm").value = "";
+    }
+
+    function removePinLock() {
+      localStorage.removeItem(STORAGE_KEY_PIN_HASH);
+      localStorage.removeItem(STORAGE_KEY_PIN_SALT);
+      // Remove the old plaintext PIN key from older builds as well.
+      localStorage.removeItem("secureauth_pin");
+      state.pinHash = null;
+      state.pinSalt = null;
+      showToast("PIN Lock disabled.");
+      document.getElementById("pin-lock-toggle").checked = false;
+      document.getElementById("pin-setup-container").classList.add("hidden");
+    }
+
+    function setAddAccountControlsVisible(visible) {
+      const controls = [
+        document.getElementById("fab-btn"),
+        document.getElementById("fab-menu"),
+        document.getElementById("fab-overlay")
+      ];
+
+      controls.forEach(control => {
+        if (control) control.classList.toggle("hidden", !visible);
+      });
+
+      if (!visible) closeFabMenu();
+    }
+
+    function initGateway() {
+      const gatewayScreen = document.getElementById("gateway-screen");
+      const appContainer = document.getElementById("app-container");
+      const sessionActive = sessionStorage.getItem(SESSION_KEY_LOGGED_IN);
+
+      if (sessionActive === "true" && state.user) {
+        gatewayScreen.classList.add("hidden");
+        appContainer.classList.add("active");
+        updateProfileUI();
+        setAddAccountControlsVisible(true);
+        initLockScreen();
+      } else {
+        gatewayScreen.classList.remove("hidden");
+        appContainer.classList.remove("active");
+        document.getElementById("lock-screen").classList.add("hidden");
+        setAddAccountControlsVisible(false);
+
+        if (state.user) {
+          switchGatewayMode(false);
+        } else {
+          switchGatewayMode(true);
+        }
+      }
+    }
+
+    function switchGatewayMode(register) {
+      isRegisterMode = register;
+      const title = document.getElementById("gateway-title");
+      const subtitle = document.getElementById("gateway-subtitle");
+      const nameGroup = document.getElementById("gateway-name-group");
+      const confirmGroup = document.getElementById("gateway-confirm-group");
+      const submitBtn = document.getElementById("gateway-submit-btn");
+      const switchText = document.getElementById("gateway-switch-text");
+      const switchLink = document.getElementById("gateway-switch-link");
+      const errorEl = document.getElementById("gateway-error");
+
+      errorEl.classList.add("hidden");
+
+      if (register) {
+        title.textContent = "Create SecureAuth Account";
+        subtitle.textContent = "Register to secure your 2FA codes";
+        nameGroup.classList.remove("hidden");
+        document.getElementById("gateway-name").required = true;
+        confirmGroup.classList.remove("hidden");
+        document.getElementById("gateway-confirm-password").required = true;
+        submitBtn.textContent = "Register & Enter";
+        document.getElementById("forgot-password-link").classList.add("hidden");
+        switchText.textContent = "Already have an account?";
+        switchLink.textContent = "Login here";
+      } else {
+        title.textContent = "Welcome Back";
+        subtitle.textContent = "Log in to access your 2FA codes";
+        nameGroup.classList.add("hidden");
+        document.getElementById("gateway-name").required = false;
+        confirmGroup.classList.add("hidden");
+        document.getElementById("gateway-confirm-password").required = false;
+        submitBtn.textContent = "Log In";
+        document.getElementById("forgot-password-link").classList.remove("hidden");
+        switchText.textContent = "Don't have an account?";
+        switchLink.textContent = "Register here";
+      }
+    }
+
+    async function handleGatewaySubmit(e) {
+      e.preventDefault();
+
+      const nameInput = document.getElementById("gateway-name").value.trim();
+      const emailInput = document.getElementById("gateway-email").value.trim().toLowerCase();
+      const passwordInput = document.getElementById("gateway-password").value;
+      const confirmInput = document.getElementById("gateway-confirm-password").value;
+      const errorEl = document.getElementById("gateway-error");
+      const submitBtn = document.getElementById("gateway-submit-btn");
+
+      errorEl.classList.add("hidden");
+      submitBtn.disabled = true;
+      submitBtn.style.opacity = "0.7";
+
+      try {
+        if (passwordInput.length < 6) {
+          throw new Error("Password must be at least 6 characters long.");
+        }
+
+        if (isRegisterMode && passwordInput !== confirmInput) {
+          throw new Error("Passwords do not match.");
+        }
+
+        if (isRegisterMode) {
+          const { data, error } = await supabaseClient.auth.signUp({
+            email: emailInput,
+            password: passwordInput,
+            options: {
+              data: { name: nameInput }
+            }
+          });
+
+          if (error) throw error;
+          if (!data.user) throw new Error("Registration could not be completed.");
+
+          // Save the user's display name in the profiles table.
+          const { error: profileError } = await supabaseClient
+            .from("profiles")
+            .upsert({
+              id: data.user.id,
+              name: nameInput,
+              email: emailInput,
+              avatar_data: null,
+              security_question: null,
+              security_answer_hash: null
+            }, { onConflict: "id" });
+
+          if (profileError) {
+            console.error("Profile save error:", profileError);
+            // Do not continue into the app if the profile record failed.
+            await supabaseClient.auth.signOut();
+            throw new Error("Account created, but your profile could not be saved. Please try again.");
+          }
+
+          // Email confirmation is disabled in Supabase, so a session should be available.
+          if (!data.session) {
+            throw new Error("Registration succeeded, but no login session was returned. Check Supabase Email confirmation settings.");
+          }
+
+          state.user = { id: data.user.id, name: nameInput, email: emailInput };
+          state.profile = { avatar_data: null, security_question: null };
+          updateProfileUI();
+
+          state.accounts = [];
+          localStorage.removeItem(STORAGE_KEY_ACCOUNTS);
+          sessionStorage.setItem(SESSION_KEY_LOGGED_IN, "true");
+          sessionStorage.setItem("secureauth_login_time", Date.now().toString());
+
+          document.getElementById("user-display-name").textContent = nameInput;
+          document.getElementById("gateway-screen").classList.add("hidden");
+          document.getElementById("app-container").classList.add("active");
+          setAddAccountControlsVisible(true);
+          initLockScreen();
+          renderAccounts();
+          showToast(`Welcome, ${nameInput}!`);
+          document.getElementById("gateway-form").reset();
+        } else {
+          const { data, error } = await supabaseClient.auth.signInWithPassword({
+            email: emailInput,
+            password: passwordInput
+          });
+
+          if (error) throw error;
+          if (!data.user) throw new Error("Login failed.");
+
+          const { data: profile, error: profileError } = await supabaseClient
+            .from("profiles")
+            .select("id, name, avatar_data, security_question")
+            .eq("id", data.user.id)
+            .maybeSingle();
+
+          if (profileError) {
+            console.error("Profile load error:", profileError);
+          }
+
+          state.user = { id: data.user.id, name: profile?.name || data.user.user_metadata?.name || data.user.email?.split("@")[0] || "User", email: data.user.email || emailInput };
+          state.profile = { avatar_data: profile?.avatar_data || null, security_question: profile?.security_question || null };
+          await supabaseClient.from("profiles").update({ email: emailInput }).eq("id", data.user.id);
+          updateProfileUI();
+
+          const { data: accounts, error: accountsError } = await supabaseClient
+            .from("authenticator_accounts")
+            .select("id, issuer, account, secret, color, created_at")
+            .eq("user_id", data.user.id)
+            .order("created_at", { ascending: true });
+
+          if (accountsError) throw accountsError;
+
+          state.accounts = accounts || [];
+          saveAccounts();
+
+          sessionStorage.setItem(SESSION_KEY_LOGGED_IN, "true");
+          sessionStorage.setItem("secureauth_login_time", Date.now().toString());
+
+          document.getElementById("user-display-name").textContent = state.user.name;
+          document.getElementById("gateway-screen").classList.add("hidden");
+          document.getElementById("app-container").classList.add("active");
+          setAddAccountControlsVisible(true);
+          initLockScreen();
+          renderAccounts();
+          showToast(`Welcome back, ${state.user.name}!`);
+          document.getElementById("gateway-form").reset();
+        }
+      } catch (error) {
+        console.error("Authentication error:", error);
+        errorEl.textContent = error?.message || "Something went wrong. Please try again.";
+        errorEl.classList.remove("hidden");
+
+        const container = document.querySelector(".gateway-container");
+        container.classList.add("shake");
+        setTimeout(() => container.classList.remove("shake"), 400);
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.style.opacity = "";
+      }
+    }
+
+    function checkSessionTimeout() {
+      const sessionActive = sessionStorage.getItem(SESSION_KEY_LOGGED_IN);
+      const loginTime = sessionStorage.getItem("secureauth_login_time");
+
+      if (sessionActive === "true" && loginTime) {
+        const elapsed = Date.now() - Number(loginTime);
+        const fiveMinutes = 5 * 60 * 1000;
+
+        if (elapsed >= fiveMinutes) {
+          performLogout(true);
+        }
+      }
+    }
+
+    async function performLogout(isAuto = false) {
+      await supabaseClient.auth.signOut();
+
+      sessionStorage.removeItem(SESSION_KEY_LOGGED_IN);
+      sessionStorage.removeItem("secureauth_login_time");
+      document.querySelectorAll(".modal").forEach(m => m.classList.remove("active"));
+      document.getElementById("app-container").classList.remove("active");
+      document.getElementById("lock-screen").classList.add("hidden");
+      setAddAccountControlsVisible(false);
+
+      state.accounts = [];
+      state.currentCodes = {};
+      state.user = null;
+      localStorage.removeItem(STORAGE_KEY_ACCOUNTS);
+
+      initGateway();
+
+      if (isAuto) {
+        showToast("Logged out automatically after 5 minutes.");
+      } else {
+        showToast("Logged out successfully.");
+      }
+    }
+
+    function handleLogout() {
+      if (window.confirm("Are you sure you want to log out of your current session?")) {
+        performLogout(false);
+      }
+    }
+
+    document.addEventListener("DOMContentLoaded", async () => {
+      await loadData();
+      initGateway();
+      renderAccounts();
+
+      updateCodesLoop();
+      setInterval(updateCodesLoop, 1000);
+
+      const gatewayForm = document.getElementById("gateway-form");
+      const gatewaySwitchLink = document.getElementById("gateway-switch-link");
+      const toggleGatewayPassword = document.getElementById("toggle-gateway-password");
+      const gatewayPasswordInput = document.getElementById("gateway-password");
+
+      gatewayForm.addEventListener("submit", handleGatewaySubmit);
+      gatewaySwitchLink.addEventListener("click", (e) => {
+        e.preventDefault();
+        switchGatewayMode(!isRegisterMode);
+      });
+
+      toggleGatewayPassword.addEventListener("click", () => {
+        const type = gatewayPasswordInput.getAttribute("type") === "password" ? "text" : "password";
+        gatewayPasswordInput.setAttribute("type", type);
+
+        const icon = toggleGatewayPassword.querySelector("i");
+        icon.classList.toggle("fa-eye");
+        icon.classList.toggle("fa-eye-slash");
+      });
+
+      const fabBtn = document.getElementById("fab-btn");
+      const fabOverlay = document.getElementById("fab-overlay");
+      fabBtn.addEventListener("click", toggleFabMenu);
+      fabOverlay.addEventListener("click", closeFabMenu);
+
+      const manualEntryBtn = document.getElementById("manual-entry-btn");
+      const emptyAddBtn = document.getElementById("empty-add-btn");
+      const manualForm = document.getElementById("manual-form");
+      const toggleSecretBtn = document.getElementById("toggle-secret-visibility");
+      const secretInput = document.getElementById("manual-secret");
+
+      const openManualModal = () => {
+        closeFabMenu();
+        openModal("manual-modal");
+      };
+
+      manualEntryBtn.addEventListener("click", openManualModal);
+      emptyAddBtn.addEventListener("click", openManualModal);
+
+      manualForm.addEventListener("submit", async (e) => {
+        e.preventDefault();
+        const issuer = document.getElementById("manual-issuer").value;
+        const account = document.getElementById("manual-account").value;
+        const secret = secretInput.value;
+
+        const success = await addAccount(issuer, account, secret);
+        if (success) {
+          closeModal("manual-modal");
+          manualForm.reset();
+          showToast(`Added account: ${issuer}`);
+        }
+      });
+
+      toggleSecretBtn.addEventListener("click", () => {
+        const type = secretInput.getAttribute("type") === "password" ? "text" : "password";
+        secretInput.setAttribute("type", type);
+
+        const icon = toggleSecretBtn.querySelector("i");
+        icon.classList.toggle("fa-eye");
+        icon.classList.toggle("fa-eye-slash");
+      });
+
+      secretInput.setAttribute("type", "password");
+
+      const scanQrBtn = document.getElementById("scan-qr-btn");
+      scanQrBtn.addEventListener("click", () => {
+        closeFabMenu();
+        openModal("scan-modal");
+        switchScanTab("camera-scan");
+      });
+
+      document.querySelectorAll(".scan-tab").forEach(tab => {
+        tab.addEventListener("click", () => {
+          switchScanTab(tab.dataset.tab);
+        });
+      });
+
+      const fileUploadArea = document.getElementById("file-upload-area");
+      const qrFileInput = document.getElementById("qr-file-input");
+      fileUploadArea.addEventListener("click", () => qrFileInput.click());
+
+      qrFileInput.addEventListener("change", (e) => {
+        if (e.target.files.length > 0) handleQrFileUpload(e.target.files[0]);
+      });
+
+      fileUploadArea.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        fileUploadArea.classList.add("dragover");
+      });
+
+      fileUploadArea.addEventListener("dragleave", () => {
+        fileUploadArea.classList.remove("dragover");
+      });
+
+      fileUploadArea.addEventListener("drop", (e) => {
+        e.preventDefault();
+        fileUploadArea.classList.remove("dragover");
+        if (e.dataTransfer.files.length > 0) handleQrFileUpload(e.dataTransfer.files[0]);
+      });
+
+
+      const forgotLink=document.getElementById("forgot-password-link");
+      const forgotForm=document.getElementById("forgot-password-form");
+      const recoveryEmail=document.getElementById("recovery-email");
+      const recoveryQuestionGroup=document.getElementById("recovery-question-group");
+      const recoveryPasswordGroup=document.getElementById("recovery-password-group");
+      const recoveryQuestionLabel=document.getElementById("recovery-question-label");
+      const recoveryDescription=document.getElementById("recovery-description");
+      const recoveryStatus=document.getElementById("recovery-status");
+      const recoveryContinueBtn=document.getElementById("recovery-continue-btn");
+      let recoveryStage="email";
+      let recoveryToken=null;
+
+      function resetRecoveryModal() {
+        recoveryStage="email";
+        recoveryToken=null;
+        recoveryEmail.value=document.getElementById("gateway-email").value.trim().toLowerCase();
+        recoveryQuestionGroup.classList.add("hidden");
+        recoveryPasswordGroup.classList.add("hidden");
+        recoveryDescription.textContent="Enter your email to find your recovery question.";
+        recoveryContinueBtn.textContent="Continue";
+        recoveryStatus.classList.add("hidden");
+        document.getElementById("recovery-answer-input").value="";
+        document.getElementById("recovery-new-password").value="";
+        document.getElementById("recovery-confirm-password").value="";
+        recoveryEmail.disabled=false;
+      }
+
+      forgotLink.addEventListener("click",async(e)=>{e.preventDefault();resetRecoveryModal();openModal("forgot-password-modal");});
+
+      forgotForm.addEventListener("submit",async(e)=>{
+        e.preventDefault();
+        recoveryStatus.classList.add("hidden");
+        const email=recoveryEmail.value.trim().toLowerCase();
+        try{
+          if(recoveryStage==="email"){
+            const result=await beginRecovery(email);
+            if(!result.has_question) throw new Error("No security question is configured for this account. Please use email password recovery or contact support.");
+            recoveryQuestionLabel.textContent=result.question;
+            recoveryQuestionGroup.classList.remove("hidden");
+            recoveryStage="answer";
+            recoveryEmail.disabled=true;
+            recoveryDescription.textContent="Answer the security question to continue.";
+            recoveryContinueBtn.textContent="Verify answer";
+            return;
+          }
+
+          if(recoveryStage==="answer"){
+            const answer=document.getElementById("recovery-answer-input").value.trim();
+            if(answer.length<3) throw new Error("Please enter your security answer.");
+            const result=await verifyRecoveryAnswer(email,answer);
+            recoveryToken=result.recovery_token;
+            if(!recoveryToken) throw new Error("Recovery verification failed. Please try again.");
+            recoveryQuestionGroup.classList.add("hidden");
+            recoveryPasswordGroup.classList.remove("hidden");
+            recoveryStage="password";
+            recoveryDescription.textContent="Answer verified. Create a new password for your account.";
+            recoveryContinueBtn.textContent="Set new password";
+            return;
+          }
+
+          const np=document.getElementById("recovery-new-password").value;
+          const cp=document.getElementById("recovery-confirm-password").value;
+          if(np.length<6) throw new Error("New password must be at least 6 characters long.");
+          if(np!==cp) throw new Error("Passwords do not match.");
+          if(!recoveryToken) throw new Error("Recovery verification has expired. Please start again.");
+          await finishRecovery(email,recoveryToken,np);
+          recoveryToken=null;
+          closeModal("forgot-password-modal");
+          showToast("Password reset successfully. You can now log in.");
+          switchGatewayMode(false);
+          document.getElementById("gateway-email").value=email;
+          document.getElementById("gateway-password").value="";
+        }catch(err){
+          recoveryStatus.textContent=err.message||"Recovery failed.";
+          recoveryStatus.classList.remove("hidden");
+        }
+      });
+
+      const settingsBtn = document.getElementById("settings-btn");
+      const pinLockToggle = document.getElementById("pin-lock-toggle");
+      const pinSetupContainer = document.getElementById("pin-setup-container");
+      const savePinBtn = document.getElementById("save-pin-btn");
+      const clearAllBtn = document.getElementById("clear-all-btn");
+      const exportBackupBtn = document.getElementById("export-backup-btn");
+      const importBackupTrigger = document.getElementById("import-backup-trigger");
+      const importBackupInput = document.getElementById("import-backup-input");
+      const logoutBtn = document.getElementById("logout-btn");
+      const profilePictureInput=document.getElementById("profile-picture-input");
+      const changePasswordBtn=document.getElementById("change-password-btn");
+      const saveRecoveryBtn=document.getElementById("save-recovery-btn");
+      profilePictureInput.addEventListener("change",async(e)=>{try{if(e.target.files[0]) await saveProfilePicture(e.target.files[0]);}catch(err){showToast(err.message||"Could not update profile picture.");}e.target.value="";});
+      changePasswordBtn.addEventListener("click",async()=>{try{changePasswordBtn.disabled=true;await changePassword();}catch(err){const s=document.getElementById("change-password-status");s.textContent=err.message||"Could not change password.";s.classList.remove("hidden");}finally{changePasswordBtn.disabled=false;}});
+      saveRecoveryBtn.addEventListener("click",async()=>{try{saveRecoveryBtn.disabled=true;await saveRecoveryQuestion();}catch(err){const s=document.getElementById("recovery-status");s.textContent=err.message||"Could not save recovery question.";s.classList.remove("hidden");}finally{saveRecoveryBtn.disabled=false;}});
+
+
+      settingsBtn.addEventListener("click", () => {
+        pinLockToggle.checked = !!(state.pinHash && state.pinSalt);
+        pinSetupContainer.classList.add("hidden");
+        updateProfileUI();
+        openModal("settings-modal");
+      });
+
+      pinLockToggle.addEventListener("change", () => {
+        if (pinLockToggle.checked) {
+          pinSetupContainer.classList.remove("hidden");
+        } else {
+          if (window.confirm("Are you sure you want to disable the PIN lock?")) {
+            removePinLock();
+          } else {
+            pinLockToggle.checked = true;
+          }
+        }
+      });
+
+      savePinBtn.addEventListener("click", () => {
+        const pinVal = document.getElementById("setup-pin").value;
+        const pinConfirmVal = document.getElementById("setup-pin-confirm").value;
+        const errorEl = document.getElementById("pin-setup-error");
+
+        errorEl.classList.add("hidden");
+
+        if (!/^[0-9]{4}$/.test(pinVal)) {
+          errorEl.textContent = "PIN must be exactly 4 digits.";
+          errorEl.classList.remove("hidden");
+          return;
+        }
+
+        if (pinVal !== pinConfirmVal) {
+          errorEl.textContent = "PINs do not match.";
+          errorEl.classList.remove("hidden");
+          return;
+        }
+
+        setupPinLock(pinVal).catch(error => {
+          console.error("PIN setup error:", error);
+          errorEl.textContent = "Could not enable PIN lock. Please try again.";
+          errorEl.classList.remove("hidden");
+        });
+      });
+
+      exportBackupBtn.addEventListener("click", exportBackup);
+      importBackupTrigger.addEventListener("click", () => importBackupInput.click());
+      importBackupInput.addEventListener("change", (e) => {
+        if (e.target.files.length > 0) importBackup(e.target.files[0]);
+      });
+
+      logoutBtn.addEventListener("click", handleLogout);
+
+      clearAllBtn.addEventListener("click", async () => {
+        if (window.confirm("CRITICAL WARNING!\n\nAre you absolutely sure you want to delete ALL accounts and settings?\nThis will permanently erase all 2FA keys and you will lose access to your accounts if you do not have backups elsewhere!\n\nType 'DELETE' to confirm.")) {
+          const confirmation = window.prompt("Type 'DELETE' (all caps) to confirm permanent deletion:");
+          if (confirmation === "DELETE") {
+            const { data: { user } } = await supabaseClient.auth.getUser();
+
+            if (user) {
+              const { error } = await supabaseClient
+                .from("authenticator_accounts")
+                .delete()
+                .eq("user_id", user.id);
+
+              if (error) {
+                console.error("Clear accounts error:", error);
+                showToast("Could not delete your server data.");
+                return;
+              }
+
+              const { error: profileDeleteError } = await supabaseClient
+                .from("profiles")
+                .delete()
+                .eq("id", user.id);
+
+              if (profileDeleteError) {
+                console.error("Clear profile error:", profileDeleteError);
+                showToast("Accounts deleted, but the profile could not be removed.");
+                return;
+              }
+
+              await supabaseClient.auth.signOut();
+            }
+
+            localStorage.removeItem(STORAGE_KEY_ACCOUNTS);
+            localStorage.removeItem(STORAGE_KEY_PIN_HASH);
+            localStorage.removeItem(STORAGE_KEY_PIN_SALT);
+            localStorage.removeItem("secureauth_pin");
+            sessionStorage.clear();
+
+            state.accounts = [];
+            state.pinHash = null;
+            state.pinSalt = null;
+            state.isLocked = false;
+            state.currentCodes = {};
+            state.user = null;
+            state.profile = { avatar_data: null, security_question: null };
+
+            initGateway();
+            renderAccounts();
+            closeModal("settings-modal");
+            showToast("All account data has been permanently deleted.");
+          } else {
+            showToast("Deletion cancelled.");
+          }
+        }
+      });
+
+      const searchInput = document.getElementById("search-input");
+      const clearSearchBtn = document.getElementById("clear-search");
+
+      searchInput.addEventListener("input", () => {
+        clearSearchBtn.classList.toggle("hidden", searchInput.value.length === 0);
+        renderAccounts();
+      });
+
+      clearSearchBtn.addEventListener("click", () => {
+        searchInput.value = "";
+        clearSearchBtn.classList.add("hidden");
+        renderAccounts();
+        searchInput.focus();
+      });
+
+      document.querySelectorAll(".close-btn, .modal .btn-secondary, .modal .btn-primary[data-modal]").forEach(btn => {
+        btn.addEventListener("click", () => {
+          const modalId = btn.dataset.modal;
+          closeModal(modalId);
+        });
+      });
+
+      document.querySelectorAll(".modal").forEach(modal => {
+        modal.addEventListener("click", (e) => {
+          if (e.target === modal) closeModal(modal.id);
+        });
+      });
+
+      document.querySelectorAll(".pin-btn[data-val]").forEach(btn => {
+        btn.addEventListener("click", () => handlePinInput(btn.dataset.val));
+      });
+
+      document.getElementById("pin-backspace").addEventListener("click", handlePinBackspace);
+      document.getElementById("pin-clear").addEventListener("click", handlePinClear);
+
+      supabaseClient.auth.onAuthStateChange(async (event, session) => {
+        if (event === "SIGNED_OUT") {
+          state.user = null;
+          state.accounts = [];
+          state.currentCodes = {};
+          localStorage.removeItem(STORAGE_KEY_ACCOUNTS);
+          sessionStorage.removeItem(SESSION_KEY_LOGGED_IN);
+          sessionStorage.removeItem("secureauth_login_time");
+          initGateway();
+          renderAccounts();
+        } else if (event === "SIGNED_IN" && session?.user && !state.user) {
+          await loadData();
+          sessionStorage.setItem(SESSION_KEY_LOGGED_IN, "true");
+          sessionStorage.setItem("secureauth_login_time", Date.now().toString());
+          initGateway();
+          renderAccounts();
+        }
+      });
+    });
+  </script>
+</body>
+</html>
